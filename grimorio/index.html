@@ -536,7 +536,7 @@ async function createSample() {
 
 /* ---------- formulários (modal) ---------- */
 let modalState = null;
-function openForm(cfg) { modalState = cfg; renderModal(); cfg.fields.filter(f => f.type === 'multi').forEach(f => updateMultiCount('f-' + f.id)); setTimeout(() => $('#modal input, #modal textarea, #modal select')?.focus(), 30); }
+function openForm(cfg) { modalState = cfg; renderModal(); cfg.fields.filter(f => f.type === 'multi').forEach(f => updateMultiCount('f-' + f.id)); setTimeout(() => { if (!$('#modal')?.contains(document.activeElement)) $('#modal input, #modal textarea, #modal select')?.focus(); }, 30); }
 function closeForm() { modalState = null; $('#modal').innerHTML = ''; }
 function fieldHtml(f) {
   const id = 'f-' + f.id, v = f.value ?? '';
@@ -570,6 +570,7 @@ function worldForm(w) {
     title: w ? 'Editar mundo' : 'Novo mundo', submit: w ? 'Salvar' : 'Criar mundo',
     fields: [
       {id: 'name', label: 'Nome do mundo', value: w?.name, required: true, full: true},
+      {id: 'currentYear', label: 'Ano atual da história', value: w?.currentYear, ph: 'Ex.: 1247', full: true},
       {id: 'desc', label: 'Apresentação do mundo', type: 'textarea', value: w?.desc, full: true, ph: 'Tom, era, o que torna este mundo único'}
     ],
     onSubmit: async v => {
@@ -724,6 +725,7 @@ function loreForm(n, preset) {
       return ok;
     }
   });
+  setLoreYearLabels($('#f-cat')?.value);
 }
 
 /* ---------- consultas ---------- */
@@ -867,7 +869,7 @@ function pickerHtml() {
         const n = st.campaigns.filter(c => worldOf(c)?.id === w.id).length;
         return `<article class="world-card"><div><h2>${esc(w.name)}</h2>
           <p>${esc(w.desc || 'Localidades, mapa e lore compartilhados por todas as campanhas deste mundo.')}</p>
-          <p style="font-size:14px;margin-top:6px">${n === 1 ? '1 campanha' : n + ' campanhas'} neste mundo</p></div>
+          <p style="font-size:14px;margin-top:6px">${n === 1 ? '1 campanha' : n + ' campanhas'} neste mundo${w.currentYear ? ` · ano atual da história: ${esc(w.currentYear)}` : ''}</p></div>
           <div class="row"><button class="btn primary" data-act="open-world" data-id="${esc(w.id)}">Abrir mundo</button>
           <button class="btn small ghost" data-act="edit-world" data-id="${esc(w.id)}">Editar</button>${worlds.length > 1 ? confirmBtn('world:' + w.id) : ''}</div></article>`;
       }).join('')}
@@ -1147,12 +1149,30 @@ function placeDetail(p, compact) {
   </article>`;
 }
 
+/* ano "atual" da história: o da campanha aberta, senão o ano atual definido no mundo */
+const nowYear = () => yearNum(inCampaign() ? curCamp()?.year : null) ?? yearNum(curWorld()?.currentYear);
+function ageLabel(n) {
+  const b = yearNum(n.yearFrom), d = yearNum(n.yearTo); if (b == null) return '';
+  const plural = x => x === 1 ? '1 ano' : `${x} anos`;
+  if (d != null) return d >= b ? `morreu aos ${plural(d - b)}` : '';
+  const y = nowYear(); if (y == null || y < b) return '';
+  return `${plural(y - b)} em ${y}`;
+}
+const LORE_YEAR_LABELS = {
+  Personagens: [['Ano de nascimento (opcional)', 'Ex.: 212'], ['Ano de morte (opcional)', 'Em branco se estiver vivo']],
+  _: [['Ano ou início (opcional)', 'Ex.: 212'], ['Até o ano, se durou (opcional)', 'Ex.: 350']]
+};
+function setLoreYearLabels(cat) {
+  const L = LORE_YEAR_LABELS[cat] || LORE_YEAR_LABELS._;
+  ['yearFrom', 'yearTo'].forEach((k, i) => { const lb = document.querySelector(`label[for="f-${k}"]`), inp = $('#f-' + k); if (lb) lb.textContent = L[i][0]; if (inp) inp.placeholder = L[i][1]; });
+}
 const lorePlaces = n => (n.places || []).map(id => st.places.find(p => p.id === id)).filter(Boolean);
 const loreOfPlace = p => st.lore.filter(l => (l.places || []).includes(p.id)).sort((a, b) => (yearNum(a.yearFrom) ?? 1e9) - (yearNum(b.yearFrom) ?? 1e9) || byName(a, b));
 /* período da história: texto livre + anos opcionais para ordenar */
 const yearNum = y => { const m = String(y ?? '').match(/-?\d+/); return m ? +m[0] : null; };
 function periodLabel(n) {
   const a = String(n.yearFrom ?? '').trim(), b = String(n.yearTo ?? '').trim();
+  if (n.cat === 'Personagens') return [n.period, [a && `n. ${a}`, b && `m. ${b}`].filter(Boolean).join(' – '), ageLabel(n)].filter(Boolean).join(' · ');
   const yrs = a && b ? (a === b ? `ano ${a}` : `${a}–${b}`) : a ? `ano ${a}` : b ? `até ${b}` : '';
   return [n.period, yrs].filter(Boolean).join(' · ');
 }
@@ -1590,6 +1610,7 @@ document.addEventListener('input', ev => {
   if (mq) { const t = norm(ev.target.value); document.querySelectorAll(`#${mq} .multi-opt`).forEach(l => l.hidden = !!t && !l.dataset.lab.includes(t)); }
 });
 document.addEventListener('change', ev => {
+  if (ev.target.id === 'f-cat' && $('#f-yearFrom')) setLoreYearLabels(ev.target.value);
   const mm = ev.target.closest?.('.multi'); if (mm) updateMultiCount(mm.id);
   if (ev.target.id === 'npc-sort') { st.npcSort = ev.target.value; render(); }
   if (ev.target.id === 'lore-period') { st.fPeriod = ev.target.value; render(); }
