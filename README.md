@@ -16,18 +16,16 @@ Assistente para mestre e jogadores durante as sessões.
 
 ### Como usar
 
-Abra o app pelo GitHub Pages. Tudo funciona no navegador, sem instalar nada.
+Abra o app pelo GitHub Pages: https://f4biojunior.github.io/ethru-apps/
 
-### De onde vêm os dados
+- **Todos veem os mesmos dados**, guardados no Firebase (Firestore) e atualizados ao vivo.
+- **Qualquer pessoa pode ver.** Para editar, clique em **Entrar com Google** usando um e-mail autorizado.
+- **O administrador** usa o botão **Editores** para autorizar e-mails.
+- Quem controla o acesso são as regras do Firestore, no console do Firebase. A configuração em `grimorio/firebase-config.js` é pública por natureza.
 
-- **`data/grimorio.json`** guarda os dados publicados: o mundo de Ethrü, as localidades, o lore e as campanhas.
-- **`data/mapa-ethru.jpg`** é o mapa de Ethrü.
+### Dados iniciais
 
-Esses arquivos são uma cópia do Grimório principal, que fica no Claude. Quando alguém abre o app pelo GitHub, esses dados são carregados automaticamente.
-
-Quem editar alguma coisa pelo GitHub tem as edições salvas **só no próprio navegador**, e elas não somem quando os dados publicados são atualizados. Para mandar edições de volta para o Grimório principal, use **Exportar** e depois **Importar**.
-
-Os dados publicados só carregam quando o app é aberto por um endereço web (GitHub Pages ou um servidor local). Abrindo o arquivo direto do disco, o app começa vazio.
+`data/grimorio.json` e `data/mapa-ethru.jpg` guardam a cópia inicial do mundo e das campanhas. Com o banco vazio, o administrador clica em **Trazer os dados publicados** para copiá-los para o Firebase.
 
 ### Publicar com GitHub Pages
 
