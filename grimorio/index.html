@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 </head>
 <body>
 <title>Grimório de Campanhas</title>
@@ -41,6 +45,11 @@ p{margin:0}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .wrap{max-width:1180px;margin:0 auto}
 
+/* modo leitura (Firebase sem permissão) */
+body.ro .adder, body.ro .camp-new, body.ro [data-act^="new-"], body.ro [data-act^="edit-"], body.ro [data-act="del"],
+body.ro [data-act="place-new"], body.ro [data-act="place-set"], body.ro [data-act="map-upload"], body.ro [data-act="sample"],
+body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [data-act="import"], body.ro .world-note-edit{display:none!important}
+.who{font-size:13px;color:var(--muted);max-width:18ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* barra superior */
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:12px;border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-weight:700;font-size:20px;letter-spacing:.01em}
@@ -388,6 +397,17 @@ function dbStore(db) {
     del: (p, id) => db.collection(p).doc(id).delete()
   };
 }
+function fbStore() {
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  const fs = firebase.firestore();
+  return {
+    mode: 'firebase', fs,
+    listen(p, cb, err) { return fs.collection(p).onSnapshot(s => cb(s.docs.map(d => ({id: d.id, ...d.data()})), s.metadata), e => err && err(e)); },
+    async list(p) { const s = await fs.collection(p).get(); return s.docs.map(d => ({id: d.id, ...d.data()})); },
+    put: (p, id, d) => fs.collection(p).doc(id).set(d),
+    del: (p, id) => fs.collection(p).doc(id).delete()
+  };
+}
 let store = null;
 
 /* ---------- estado ---------- */
@@ -422,7 +442,8 @@ async function remove(path, id) {
 }
 function failMsg(e) {
   const c = e && e.code;
-  if (c === 'invalid_argument' || c === 'not_granted') toast('Você só tem acesso de leitura a este grimório.');
+  if (c === 'permission-denied') toast(st.user ? 'Sua conta não tem permissão para editar. Peça ao administrador para autorizar seu e-mail.' : 'Entre com sua conta Google para editar.');
+  else if (c === 'invalid_argument' || c === 'not_granted') toast('Você só tem acesso de leitura a este grimório.');
   else if (c === 'quota_exceeded') toast('O espaço de armazenamento acabou. Exclua registros antigos para continuar.');
   else toast('Não foi possível salvar. Verifique a conexão e tente de novo.');
 }
@@ -478,7 +499,7 @@ async function deleteCampaign(id) {
 async function deleteWorld(id) {
   const users = st.campaigns.filter(c => worldOf(c)?.id === id);
   if (users.length) return toast(`Este mundo é usado por ${users.length} campanha(s). Troque o mundo delas ou exclua-as antes.`);
-  for (const k of ['places', 'lore']) {
+  for (const k of ['places', 'lore', 'map']) {
     const p = `worlds/${id}/${k}`;
     try { for (const d of await store.list(p)) await store.del(p, d.id); } catch (e) { failMsg(e); return; }
   }
@@ -694,8 +715,25 @@ function placesFiltered() {
     (!q || norm([p.name, p.type, p.region, p.ruler, p.desc, (p.tags || []).join(' '), (p.entries || []).map(e => e.text).join(' ')].join(' ')).includes(q)))
     .sort((a, b) => (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99) || byName(a, b));
 }
+const mapCache = {};
+async function loadMapChunks(w) {
+  const c = mapCache[w.id]; if (c?.loading === w.mapVer) return;
+  mapCache[w.id] = {...c, loading: w.mapVer};
+  try {
+    const parts = (await store.list(`worlds/${w.id}/map`)).sort((a, b) => a.i - b.i);
+    const bin = atob(parts.map(p => p.data).join('')); const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([u8], {type: 'image/jpeg'}));
+    if (c?.url) URL.revokeObjectURL(c.url);
+    mapCache[w.id] = {ver: w.mapVer, url}; render();
+  } catch { mapCache[w.id] = {...c, loading: null}; }
+}
 function mapSrc(w) {
   if (!w) return null;
+  if (store?.mode === 'firebase') {
+    if (w.mapChunks) { const c = mapCache[w.id]; if (c?.ver === w.mapVer) return c.url; loadMapChunks(w); }
+    return w.mapFile ? '../' + w.mapFile : null;
+  }
   if (store?.mode === 'db') return w.mapAsset ? '/_blob/' + w.mapAsset : null;
   return lsGet('grimorio-mapa-' + w.id) || (w.mapFile && /^https?:$/.test(location.protocol) ? '../' + w.mapFile : null);
 }
@@ -750,7 +788,11 @@ function renderBar() {
   } else if (st.screen === 'world' && curWorld()) {
     ctx = `<button class="camp-switch" data-act="go-picker" title="Voltar"><span>Mundo</span><b>${esc(curWorld().name)}</b><span>· voltar ▾</span></button>`;
   }
-  const mode = !store ? '' : store.mode === 'db'
+  const mode = !store ? '' : store.mode === 'firebase'
+    ? `<span class="mode${st.canEdit ? '' : ' local'}" title="Todos veem os mesmos dados, atualizados ao vivo"><i></i>${st.canEdit ? 'Dados compartilhados' : 'Somente leitura'}</span>
+       ${st.user ? `<span class="who" title="${esc(st.user.email)}">${esc(st.user.name || st.user.email)}</span>${st.canEdit ? '<button class="btn small ghost" data-act="editors">Editores</button>' : ''}<button class="btn small ghost" data-act="logout">Sair</button>`
+         : '<button class="btn small primary" data-act="login">Entrar com Google</button>'}`
+    : store.mode === 'db'
     ? '<span class="mode" title="Os dados ficam salvos na sua conta e aparecem em qualquer dispositivo"><i></i>Salvo na nuvem</span>'
     : st.published
       ? `<span class="mode local" title="Os dados publicados no repositório foram carregados. O que você mudar aqui fica salvo só neste navegador."><i></i>Dados publicados em ${fmtDate(st.published)} · edições ficam neste navegador</span>`
@@ -787,7 +829,10 @@ function pickerHtml() {
       </article>`).join('')}
       <button class="camp-new" data-act="new-camp">+ Nova campanha</button>
     </div>
-    <div class="picker-foot">${SAMPLE && !st.campaigns.some(c => c.example) ? '<button class="btn small ghost" data-act="sample">Criar campanha de exemplo</button><span>para ver como funciona.</span>' : ''}</div>
+    ${store?.mode === 'firebase' && !st.worlds.length ? `<div class="side-empty" style="margin-top:16px"><h3>O banco compartilhado está vazio</h3>
+      ${st.canEdit ? '<p>Traga para cá o mundo de Ethrü, o mapa, os lugares e as campanhas que já estão publicados no repositório.</p><p style="margin-top:10px"><button class="btn primary" data-act="seed">Trazer os dados publicados</button></p>'
+        : st.user ? '<p>Sua conta ainda não pode editar. Peça ao administrador para autorizar seu e-mail.</p>' : '<p>Entre com a conta Google do administrador para começar.</p>'}</div>` : ''}
+    <div class="picker-foot">${SAMPLE && store?.mode !== 'firebase' && !st.campaigns.some(c => c.example) ? '<button class="btn small ghost" data-act="sample">Criar campanha de exemplo</button><span>para ver como funciona.</span>' : ''}</div>
     </div>
     <div class="picker-sec"><p class="eyebrow">${worlds.length > 1 ? 'Mundos' : 'Mundo'}</p>
       <div style="display:flex;flex-direction:column;gap:12px">
@@ -964,7 +1009,9 @@ function viewMap() {
   const pl = st.placing;
   const placingName = pl ? (pl.id ? st.places.find(p => p.id === pl.id)?.name : 'a nova localidade') : '';
   let map;
-  if (!src) {
+  if (!src && w.mapChunks) {
+    map = `<div class="map-empty"><h3>Carregando o mapa de ${esc(w.name)}…</h3></div>`;
+  } else if (!src) {
     map = `<div class="map-empty"><h3>Mapa de ${esc(w.name)}</h3>
       <p>Envie a imagem do mapa (JPG, PNG ou WebP). Depois é só clicar nele para marcar cidades, vilas, castelos e outros lugares.</p>
       <button class="btn primary" data-act="map-upload">Enviar mapa</button>
@@ -1116,6 +1163,17 @@ async function uploadMap(file) {
     } catch (e) {
       toast(e?.code === 'too_large' ? 'A imagem passa de 20 MB. Reduza o tamanho e tente de novo.' : e?.code === 'quota_or_state' ? 'Acabou o espaço para arquivos deste Grimório.' : 'Não foi possível enviar o mapa. Tente de novo.');
     }
+  } else if (store.mode === 'firebase') {
+    const k = Math.min(1, 4096 / Math.max(W, H));
+    const c = document.createElement('canvas'); c.width = Math.round(W * k); c.height = Math.round(H * k);
+    c.getContext('2d').drawImage(im.img, 0, 0, c.width, c.height);
+    const b64 = c.toDataURL('image/jpeg', .82).split(',')[1], CH = 900000, n = Math.ceil(b64.length / CH);
+    if (n > 24) { URL.revokeObjectURL(im.url); return toast('A imagem é grande demais. Tente uma versão menor.'); }
+    try {
+      for (let i = 0; i < n; i++) await store.put(`worlds/${w.id}/map`, String(i).padStart(3, '0'), {i, data: b64.slice(i * CH, (i + 1) * CH)});
+      for (const old of await store.list(`worlds/${w.id}/map`)) if (old.i >= n) await store.del(`worlds/${w.id}/map`, old.id);
+      if (await save('worlds', w.id, {...strip(w), mapChunks: n, mapVer: Date.now(), mapW: W, mapH: H, updatedAt: nowIso()})) { st.mapDims[w.id] = [W, H]; delete st.view[w.id]; toast('Mapa salvo para todos.'); }
+    } catch (e) { failMsg(e); }
   } else {
     let ok = false;
     for (const [max, q] of [[3200, .85], [2400, .8], [1800, .72]]) {
@@ -1408,6 +1466,10 @@ document.addEventListener('click', async ev => {
   if (act === 'modal-close') return closeForm();
   if (act === 'dice-toggle') { st.dice.open = !st.dice.open; renderDice(); if (st.dice.open) $('#dice-expr')?.focus(); return; }
   if (act === 'dice-quick') { $('#dice-expr').value = b.dataset.expr; return doRoll(b.dataset.expr); }
+  if (act === 'login') return login();
+  if (act === 'logout') return firebase.auth().signOut();
+  if (act === 'editors') return editorsForm();
+  if (act === 'seed') return seedFromPublished();
   if (act === 'export') return exportData();
   if (act === 'import') return $('#import-file').click();
   if (act === 'go-picker') return goPicker();
@@ -1494,18 +1556,72 @@ document.addEventListener('keydown', ev => {
   }
 });
 
+/* ---------- login e editores (Firebase) ---------- */
+function initAuth() {
+  document.body.classList.add('ro');
+  firebase.auth().getRedirectResult().catch(() => {});
+  firebase.auth().onAuthStateChanged(async u => {
+    st.user = u ? {email: u.email, name: u.displayName} : null; st.canEdit = false; st.editors = [];
+    if (u) {
+      try { const d = await store.fs.doc('config/editors').get(); st.canEdit = true; st.editors = d.exists ? (d.data().emails || []) : []; }
+      catch { st.canEdit = false; }
+    }
+    document.body.classList.toggle('ro', !st.canEdit);
+    render();
+  });
+}
+async function login() {
+  const auth = firebase.auth(), prov = new firebase.auth.GoogleAuthProvider();
+  try { await auth.signInWithPopup(prov); }
+  catch (e) {
+    if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request'].includes(e?.code)) return auth.signInWithRedirect(prov);
+    if (e?.code === 'auth/unauthorized-domain') return toast('Este endereço ainda não foi autorizado no Firebase (Authentication → Domínios autorizados).');
+    if (e?.code !== 'auth/popup-closed-by-user') toast('Não foi possível entrar. Tente de novo.');
+  }
+}
+function editorsForm() {
+  openForm({
+    title: 'Quem pode editar', submit: 'Salvar',
+    intro: 'Qualquer pessoa pode ver o Grimório. Para editar, a pessoa entra com uma conta Google cujo e-mail esteja nesta lista. Só o administrador pode mudar a lista.',
+    fields: [{id: 'emails', label: 'E-mails autorizados (um por linha)', type: 'textarea', full: true, value: (st.editors || []).join('\n'), ph: 'amigo@gmail.com'}],
+    onSubmit: async v => {
+      const emails = uniq(v.emails.split(/[\s,;]+/).map(e => e.trim().toLowerCase()).filter(e => /@/.test(e)));
+      try { await store.fs.doc('config/editors').set({emails, updatedAt: nowIso()}); st.editors = emails; toast('Lista de editores salva.'); return true; }
+      catch (e) { toast(e?.code === 'permission-denied' ? 'Só o administrador pode mudar a lista de editores.' : 'Não foi possível salvar.'); return false; }
+    }
+  });
+}
+async function seedFromPublished() {
+  let data;
+  try { const r = await fetch('../data/grimorio.json', {cache: 'no-cache'}); data = await r.json(); } catch { return toast('Não encontrei os dados publicados no repositório.'); }
+  if (data?.app !== 'grimorio') return toast('Os dados publicados não estão no formato esperado.');
+  toast('Copiando os dados publicados…');
+  try {
+    for (const e of data.worlds || []) {
+      const w = e.world; await store.put('worlds', w.id, strip(w));
+      for (const k of ['places', 'lore']) for (const d of e[k] || []) await store.put(`worlds/${w.id}/${k}`, d.id, strip(d));
+    }
+    for (const e of data.campaigns || []) {
+      const c = e.campaign; await store.put('campaigns', c.id, strip(c));
+      for (const k of ['npcs', 'sessions', 'notes', 'placeNotes']) for (const d of e[k] || []) await store.put(`campaigns/${c.id}/${k}`, d.id, strip(d));
+    }
+    toast('Pronto. Os dados agora estão no banco compartilhado.');
+  } catch (e) { failMsg(e); }
+}
+
 /* ---------- início ---------- */
 async function boot() {
   let db = null;
   if (window.claude?.use) { try { db = await window.claude.use('db'); } catch { db = null; } }
-  store = db ? dbStore(db) : localStore();
+  if (window.FIREBASE_CONFIG && window.firebase) { try { store = fbStore(); initAuth(); } catch (e) { console.error(e); store = null; } }
+  if (!store) store = db ? dbStore(db) : localStore();
   await loadPublished();
   let worldsReady = false, campsReady = false, creating = false;
   const done = () => { if (worldsReady && campsReady) st.ready = true; render(); };
   store.listen('worlds', async (docs, meta) => {
     st.worlds = docs;
-    if (!docs.length && !meta?.fromCache && !creating) { creating = true; await save('worlds', 'ethru', {name: 'Ethrü', desc: 'O mundo criado entre amigos, inspirado inicialmente em D&D.', createdAt: nowIso()}); return; }
-    if (docs.length) worldsReady = true;
+    if (!docs.length && !meta?.fromCache && !creating && store.mode !== 'firebase') { creating = true; await save('worlds', 'ethru', {name: 'Ethrü', desc: 'O mundo criado entre amigos, inspirado inicialmente em D&D.', createdAt: nowIso()}); return; }
+    if (docs.length || (store.mode === 'firebase' && !meta?.fromCache)) worldsReady = true;
     if (st.screen === 'world' && !docs.some(w => w.id === st.wid) && !meta?.fromCache) goPicker();
     done();
   }, () => { worldsReady = true; done(); });
