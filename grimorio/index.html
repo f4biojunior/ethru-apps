@@ -323,7 +323,7 @@ const DISP = {aliado:'Aliado', neutro:'Neutro', hostil:'Hostil', desconhecido:'D
 const STATUS = {vivo:'Vivo', morto:'Morto', desaparecido:'Desaparecido', desconhecido:'Desconhecido'};
 const KINDS = ['NPC', 'Personagem jogador', 'Divindade', 'Criatura', 'Facção', 'Outro'];
 const NOTE_CATS = ['Missão', 'Local', 'Item', 'Facção', 'Lore', 'Regra', 'Outro'];
-const LORE_CATS = ['História', 'Divindades', 'Facções', 'Povos e raças', 'Idiomas', 'Magia', 'Criaturas', 'Calendário', 'Outro'];
+const LORE_CATS = ['História', 'Personagens', 'Divindades', 'Facções', 'Povos e raças', 'Idiomas', 'Magia', 'Criaturas', 'Calendário', 'Outro'];
 const SYSTEMS = ['D&D 5e', 'D&D 2024', 'Dungeon World', 'Pathfinder 2e', 'Tormenta20', 'Old Dragon', 'Call of Cthulhu', 'Vampiro: A Máscara', 'Sistema próprio'];
 /* tipo de localidade -> classe do marcador no mapa */
 const PLACE_TYPES = [
@@ -418,7 +418,7 @@ const st = {
   tab: 'npcs', wtab: 'mapa',
   sel: {npcs: null, sessions: null, notes: null, places: null, lore: null},
   q: {npcs: '', sessions: '', notes: '', places: '', lore: ''},
-  fDisp: '', fStatus: '', fCat: '', fType: '', fLore: '', npcSort: 'nome',
+  fDisp: '', fStatus: '', fCat: '', fType: '', fLore: '', fPeriod: '', loreSort: 'cat', npcSort: 'nome',
   placing: null, view: {}, labels: lsGet('grimorio-rotulos') !== '0', lod: lsGet('grimorio-lod') !== '0', mapDims: {},
   confirm: null,
   dice: {open: false, expr: '1d20', last: null, err: '', hist: []}
@@ -457,7 +457,7 @@ function toast(msg) {
 function resetSel() {
   st.sel = {npcs: null, sessions: null, notes: null, places: null, lore: null};
   st.q = {npcs: '', sessions: '', notes: '', places: '', lore: ''};
-  st.fDisp = st.fStatus = st.fCat = st.fType = st.fLore = ''; st.confirm = null; st.placing = null;
+  st.fDisp = st.fStatus = st.fCat = st.fType = st.fLore = st.fPeriod = ''; st.confirm = null; st.placing = null;
 }
 function subWorld(wid) {
   if (st.wid === wid && st.wsubs.length) return;
@@ -687,6 +687,9 @@ function loreForm(n) {
     fields: [
       {id: 'title', label: 'Título', value: n?.title, required: true, full: true},
       {id: 'cat', label: 'Categoria', type: 'select', value: n?.cat ?? (st.fLore || 'História'), options: LORE_CATS.map(c => [c, c])},
+      {id: 'period', label: 'Período da história', value: n?.period ?? st.fPeriod, ph: 'Ex.: Era das Cinzas', list: uniq(st.lore.map(x => x.period))},
+      {id: 'yearFrom', label: 'Ano ou início (opcional)', value: n?.yearFrom, ph: 'Ex.: 212'},
+      {id: 'yearTo', label: 'Até o ano, se durou (opcional)', value: n?.yearTo, ph: 'Ex.: 350'},
       {id: 'body', label: 'Texto', type: 'textarea', value: n?.body, full: true}
     ],
     onSubmit: async v => {
@@ -1116,21 +1119,37 @@ function placeDetail(p, compact) {
   </article>`;
 }
 
+/* período da história: texto livre + anos opcionais para ordenar */
+const yearNum = y => { const m = String(y ?? '').match(/-?\d+/); return m ? +m[0] : null; };
+function periodLabel(n) {
+  const a = String(n.yearFrom ?? '').trim(), b = String(n.yearTo ?? '').trim();
+  const yrs = a && b ? (a === b ? `ano ${a}` : `${a}–${b}`) : a ? `ano ${a}` : b ? `até ${b}` : '';
+  return [n.period, yrs].filter(Boolean).join(' · ');
+}
 function viewLore() {
   const q = norm(st.q.lore);
-  const list = st.lore.filter(n => (!st.fLore || n.cat === st.fLore) && (!q || norm(n.title + ' ' + n.body).includes(q)))
-    .sort((a, b) => (LORE_CATS.indexOf(a.cat) - LORE_CATS.indexOf(b.cat)) || byName(a, b));
+  const byTime = (a, b) => { const x = yearNum(a.yearFrom) ?? yearNum(a.yearTo), y = yearNum(b.yearFrom) ?? yearNum(b.yearTo);
+    return (x == null) - (y == null) || (x ?? 0) - (y ?? 0) || byName(a, b); };
+  const list = st.lore.filter(n => (!st.fLore || n.cat === st.fLore) && (!st.fPeriod || n.period === st.fPeriod) &&
+      (!q || norm([n.title, n.body, n.period, n.cat].join(' ')).includes(q)))
+    .sort(st.loreSort === 'tempo' ? byTime : (a, b) => (LORE_CATS.indexOf(a.cat) - LORE_CATS.indexOf(b.cat)) || byName(a, b));
   const sel = st.lore.find(n => n.id === st.sel.lore);
   const cats = LORE_CATS.filter(c => st.lore.some(n => n.cat === c));
+  const periods = uniq(st.lore.map(n => n.period));
   const items = list.length ? list.map(n => `<li><button class="item" data-act="sel" data-kind="lore" data-id="${esc(n.id)}" aria-current="${n.id === st.sel.lore}" style="grid-template-columns:minmax(0,1fr)">
-      <span><b>${esc(n.title)}</b><span class="sub">${esc(n.cat)}</span></span></button></li>`).join('')
-    : `<li class="empty">${st.lore.length ? 'Nada encontrado.' : (st.loaded.lore ? `Sem lore de ${esc(curWorld()?.name)} ainda. Registre história, divindades, facções, povos…` : 'Carregando…')}</li>`;
+      <span><b>${esc(n.title)}</b><span class="sub">${esc([n.cat, periodLabel(n)].filter(Boolean).join(' · '))}</span></span></button></li>`).join('')
+    : `<li class="empty">${st.lore.length ? 'Nada encontrado.' : (st.loaded.lore ? `Sem lore de ${esc(curWorld()?.name)} ainda. Registre história, personagens, divindades, facções, povos…` : 'Carregando…')}</li>`;
   return `<div class="work${sel ? ' has-sel' : ''}">
     <section class="pane list-pane">${listHead('lore', 'Buscar no lore…', 'new-lore', '+ Novo')}
       <div class="chips">${chip('fLore', '', 'Tudo')}${cats.map(c => chip('fLore', c, c)).join('')}</div>
+      <div class="chips">
+        ${periods.length ? `<select id="lore-period" class="chip" aria-label="Filtrar por período"><option value="">Todos os períodos</option>${periods.map(p => `<option value="${esc(p)}"${st.fPeriod === p ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>` : ''}
+        <select id="lore-sort" class="chip" aria-label="Ordenar" style="margin-left:auto"><option value="cat"${st.loreSort !== 'tempo' ? ' selected' : ''}>Por categoria</option><option value="tempo"${st.loreSort === 'tempo' ? ' selected' : ''}>Linha do tempo</option></select>
+      </div>
       <ul class="items">${items}</ul></section>
     <section class="pane detail-pane">${sel ? `<button class="btn small ghost back" data-act="back">← Lore</button>
-      <article class="detail"><div class="detail-head"><div><p class="eyebrow">${esc(sel.cat)}</p><h2>${esc(sel.title)}</h2></div>
+      <article class="detail"><div class="detail-head"><div><p class="eyebrow">${esc(sel.cat)}</p><h2>${esc(sel.title)}</h2>
+        ${periodLabel(sel) ? `<p class="epithet">${esc(periodLabel(sel))}</p>` : ''}</div>
         <div class="actions"><button class="btn small" data-act="edit-lore">Editar</button>${confirmBtn('lore:' + sel.id)}</div></div>
         <p class="prose" style="margin-top:18px">${esc(sel.body) || '<span style="color:var(--muted)">Sem texto.</span>'}</p>
         <p class="shared-hint">Atualizado em ${fmtDate(sel.updatedAt)} · vale para todas as campanhas em ${esc(curWorld()?.name)}</p></article>`
@@ -1534,6 +1553,8 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('change', ev => {
   if (ev.target.id === 'npc-sort') { st.npcSort = ev.target.value; render(); }
+  if (ev.target.id === 'lore-period') { st.fPeriod = ev.target.value; render(); }
+  if (ev.target.id === 'lore-sort') { st.loreSort = ev.target.value; render(); }
   if (ev.target.id === 'import-file') { const file = ev.target.files[0]; ev.target.value = ''; if (file) importData(file); }
   if (ev.target.id === 'map-file') { const file = ev.target.files[0]; ev.target.value = ''; if (file) uploadMap(file); }
 });
