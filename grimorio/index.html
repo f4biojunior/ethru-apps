@@ -175,6 +175,19 @@ body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [dat
 .field textarea{min-height:96px;resize:vertical}
 .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
+/* período no mapa */
+.when-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.when-label{font-size:14px;color:var(--muted);font-weight:700}
+.when-bar select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;max-width:min(100%,380px);min-width:0}
+.when-bar input{width:110px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px}
+.when-bar .btn[disabled]{opacity:.4;cursor:default}
+.when-count{font-size:13px;color:var(--muted)}
+.when-card{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.when-card img{width:120px;height:84px;object-fit:cover;border-radius:6px;flex:0 0 auto;background:var(--surface-2)}
+.when-card h3{font-size:19px;margin:2px 0 4px}
+.when-card p{font-size:15px;max-width:70ch}
+.when-card .credit{font-size:12px;color:var(--muted);margin-top:6px}
+@media (max-width:600px){ .when-card{flex-direction:column} .when-card img{width:100%;height:140px} }
 /* escolha múltipla e lore ligado */
 .multi{border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px}
 .multi-q{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 10px;margin-bottom:6px}
@@ -432,7 +445,7 @@ const st = {
   sel: {npcs: null, sessions: null, notes: null, places: null, lore: null},
   q: {npcs: '', sessions: '', notes: '', places: '', lore: ''},
   fDisp: '', fStatus: '', fCat: '', fType: '', fLore: '', fPeriod: '', loreSort: 'cat', npcSort: 'nome',
-  placing: null, view: {}, labels: lsGet('grimorio-rotulos') !== '0', lod: lsGet('grimorio-lod') !== '0', mapDims: {},
+  placing: null, view: {}, labels: lsGet('grimorio-rotulos') !== '0', lod: lsGet('grimorio-lod') !== '0', mapDims: {}, mapWhen: null,
   confirm: null,
   dice: {open: false, expr: '1d20', last: null, err: '', hist: []}
 };
@@ -571,6 +584,7 @@ function worldForm(w) {
     fields: [
       {id: 'name', label: 'Nome do mundo', value: w?.name, required: true, full: true},
       {id: 'currentYear', label: 'Ano atual da história', value: w?.currentYear, ph: 'Ex.: 1247', full: true},
+      {id: 'timelineUrl', label: 'Linha do tempo (link da TimelineJS ou da planilha publicada)', value: w?.timelineUrl ?? (w ? DEFAULT_TIMELINE[w.id] || '' : ''), full: true, ph: 'https://…'},
       {id: 'desc', label: 'Apresentação do mundo', type: 'textarea', value: w?.desc, full: true, ph: 'Tom, era, o que torna este mundo único'}
     ],
     onSubmit: async v => {
@@ -687,6 +701,8 @@ function placeForm(p, pos) {
       {id: 'region', label: 'Região', value: p?.region, list: uniq([...st.places.map(x => x.region), ...st.places.filter(x => ['Região', 'Reino'].includes(x.type)).map(x => x.name)])},
       {id: 'ruler', label: 'Governante / responsável', value: p?.ruler},
       {id: 'population', label: 'População', value: p?.population, ph: 'Ex.: ~300 pescadores'},
+      {id: 'founded', label: 'Existe desde o ano (opcional)', value: p?.founded, ph: 'Ex.: 187'},
+      {id: 'ended', label: 'Deixou de existir em (opcional)', value: p?.ended, ph: 'Em branco se ainda existe'},
       {id: 'mapTier', label: 'Destaque no mapa', type: 'select', value: p?.mapTier ?? '', options: [['', 'Automático (pelo tipo)'], ['1', 'Sempre visível'], ['2', 'Importante (visível de longe)'], ['3', 'Comum (aparece ao aproximar)'], ['4', 'Menor (só bem de perto)']]},
       {id: 'tags', label: 'Marcadores (separe por vírgula)', value: (p?.tags || []).join(', '), ph: 'rio, ponte de pedra, comércio'},
       {id: 'desc', label: 'Descrição', type: 'textarea', value: p?.desc, full: true, ph: 'Como é o lugar, quem vive ali, o que o torna importante'}
@@ -711,7 +727,7 @@ function loreForm(n, preset) {
     fields: [
       {id: 'title', label: 'Título', value: n?.title, required: true, full: true},
       {id: 'cat', label: 'Categoria', type: 'select', value: n?.cat ?? (st.fLore || 'História'), options: LORE_CATS.map(c => [c, c])},
-      {id: 'period', label: 'Período da história', value: n?.period ?? st.fPeriod, ph: 'Ex.: Era das Cinzas', list: uniq(st.lore.map(x => x.period))},
+      {id: 'period', label: 'Período da história', value: n?.period ?? st.fPeriod, ph: 'Escolha uma era ou escreva', list: uniq([...eraNames(curWorld()), ...st.lore.map(x => x.period)])},
       {id: 'yearFrom', label: 'Ano ou início (opcional)', value: n?.yearFrom, ph: 'Ex.: 212'},
       {id: 'yearTo', label: 'Até o ano, se durou (opcional)', value: n?.yearTo, ph: 'Ex.: 350'},
       {id: 'places', label: 'Lugares relacionados no mapa', type: 'multi', full: true, value: n?.places ?? (preset?.places || []), options: placeOpts, empty: 'Nenhuma localidade cadastrada ainda.'},
@@ -1031,8 +1047,11 @@ function legendHtml() {
 function viewMap() {
   const w = curWorld(); const src = mapSrc(w);
   const sel = st.places.find(p => p.id === st.sel.places);
-  const placed = st.places.filter(p => p.x != null && p.y != null && p.x !== '' && p.y !== '');
-  const unplaced = st.places.filter(p => !placed.includes(p)).sort(byName);
+  const win = mapWindow();
+  const allPlaced = st.places.filter(p => p.x != null && p.y != null && p.x !== '' && p.y !== '');
+  const placed = allPlaced.filter(p => placeExists(p, win) || p.id === st.sel.places);
+  const undated = win ? allPlaced.filter(p => yearNum(p.founded) == null && yearNum(p.ended) == null).length : 0;
+  const unplaced = st.places.filter(p => !allPlaced.includes(p)).sort(byName);
   const dims = mapDimsOf(w);
   const v = st.view[w.id];
   const pl = st.placing;
@@ -1054,6 +1073,7 @@ function viewMap() {
         <span class="spacer"></span>
         <button class="btn small primary" data-act="place-new">+ Localidade no mapa</button>
         <button class="btn small ghost" data-act="map-upload">Trocar mapa</button></div>
+      ${whenBarHtml(w, placed.length, allPlaced.length, undated)}
       ${pl ? `<div class="placing-bar" role="status"><span>Clique no mapa para posicionar <b>${esc(placingName)}</b>. Você ainda pode arrastar e dar zoom para achar o ponto.</span><button class="btn small" data-act="place-cancel">Cancelar</button></div>` : ''}
       <div class="map-view${pl ? ' placing' : ''}${st.labels ? '' : ' nolabels'}" id="map-view" tabindex="0" aria-label="Mapa de ${esc(w.name)}. Setas movem, mais e menos dão zoom, zero enquadra.">
         <div class="map-canvas" id="map-canvas" style="${cs}">
@@ -1105,6 +1125,7 @@ function placeDetail(p, compact) {
   const children = st.places.filter(x => x.parent === p.id).sort(byName);
   const hasPos = p.x != null && p.x !== '';
   const fact = (l, v) => v ? `<div><dt>${l}</dt><dd>${v}</dd></div>` : '';
+  const lwin = compact ? mapWindow() : null, loreAll = loreOfPlace(p), loreVis = loreAll.filter(l => loreInWindow(l, lwin));
   const camp = inCampaign() ? curCamp() : null;
   let campHtml = '';
   if (camp) {
@@ -1129,13 +1150,14 @@ function placeDetail(p, compact) {
         ${!compact && hasPos ? `<button class="btn small ghost" data-act="show-on-map">Ver no mapa</button>` : ''}
         ${mapSrc(curWorld()) ? `<button class="btn small ghost" data-act="place-set" data-id="${esc(p.id)}">${hasPos ? 'Mover no mapa' : 'Marcar no mapa'}</button>` : ''}
         ${confirmBtn('place:' + p.id)}</div></div>
-    <dl class="facts">${fact('Governante', esc(p.ruler))}${fact('População', esc(p.population))}${fact('Região', esc(p.region))}${fact('No mapa', hasPos ? 'Marcado' : 'Sem posição')}</dl>
+    <dl class="facts">${fact('Existência', yearNum(p.founded) != null || yearNum(p.ended) != null ? esc(`${p.founded || '?'} – ${p.ended || 'hoje'}`) : '')}${fact('Governante', esc(p.ruler))}${fact('População', esc(p.population))}${fact('Região', esc(p.region))}${fact('No mapa', hasPos ? 'Marcado' : 'Sem posição')}</dl>
     ${p.desc ? `<p class="prose">${esc(p.desc)}</p>` : '<p class="prose" style="color:var(--muted)">Sem descrição ainda.</p>'}
     ${(p.tags || []).length ? `<div class="tags">${p.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
     ${children.length ? `<div class="section-h"><h3>Lugares dentro de ${esc(p.name)}</h3><small>${children.length}</small></div>
       <div class="people">${children.map(c => `<button class="person" data-act="goto-place" data-id="${esc(c.id)}">${esc(c.name)} <span class="type-badge">${esc(c.type)}</span></button>`).join('')}</div>` : ''}
-    <div class="section-h"><h3>Lore relacionado</h3><small>${loreOfPlace(p).length}</small></div>
-    ${loreOfPlace(p).length ? `<ul class="lore-links">${loreOfPlace(p).map(l => `<li><button class="lore-link" data-act="goto-lore" data-id="${esc(l.id)}"><b>${esc(l.title)}</b><span>${esc([l.cat, periodLabel(l)].filter(Boolean).join(' · '))}</span></button></li>`).join('')}</ul>`
+    <div class="section-h"><h3>Lore relacionado</h3><small>${loreVis.length}${loreVis.length !== loreAll.length ? ` de ${loreAll.length}` : ''}</small></div>
+    ${loreVis.length !== loreAll.length ? `<p class="world-note">Mostrando só o que acontece em: ${esc(lwin.label)}.</p>` : ''}
+    ${loreVis.length ? `<ul class="lore-links">${loreVis.map(l => `<li><button class="lore-link" data-act="goto-lore" data-id="${esc(l.id)}"><b>${esc(l.title)}</b><span>${esc([l.cat, periodLabel(l)].filter(Boolean).join(' · '))}</span></button></li>`).join('')}</ul>`
       : '<p class="world-note">Nada do lore ligado a este lugar ainda.</p>'}
     <p style="margin-top:8px"><button class="btn small ghost" data-act="new-lore-here" data-id="${esc(p.id)}">+ Lore sobre ${esc(p.name)}</button></p>
     <div class="section-h"><h3>Crônica do lugar</h3><span class="scope world">${esc(curWorld()?.name)}</span></div>
@@ -1207,6 +1229,111 @@ function viewLore() {
         <p class="shared-hint">Atualizado em ${fmtDate(sel.updatedAt)} · vale para todas as campanhas em ${esc(curWorld()?.name)}</p></article>`
       : '<div class="detail-empty">Escolha um registro de lore.</div>'}</section>
   </div>`;
+}
+
+/* ---------- linha do tempo (planilha da TimelineJS) ---------- */
+const DEFAULT_TIMELINE = {ethru: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQHD428pa4oqo41M77PMC4QSwPNp1sKxdv0os-PjkyURgTCnHuJYyFZ-lFEVY3AbMXO8u-Fy06iVQ_A/pub?output=csv'};
+/* aceita o link da planilha publicada ou o link de embed da TimelineJS */
+function timelineCsvUrl(w) {
+  const raw = String(w?.timelineUrl || DEFAULT_TIMELINE[w?.id] || '').trim(); if (!raw) return '';
+  let m = raw.match(/[?&]source=(?:v2(?:%3A|:))?([^&]+)/i);
+  if (m) { const id = decodeURIComponent(m[1]); return id.startsWith('2PACX') ? `https://docs.google.com/spreadsheets/d/e/${id}/pub?output=csv` : `https://docs.google.com/spreadsheets/d/${id}/export?format=csv`; }
+  m = raw.match(/\/spreadsheets\/d\/e\/([^/]+)/); if (m) return `https://docs.google.com/spreadsheets/d/e/${m[1]}/pub?output=csv`;
+  m = raw.match(/\/spreadsheets\/d\/([^/]+)/); if (m) return `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv`;
+  return raw;
+}
+function parseCSV(t) {
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) { if (c === '"') { if (t[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && t[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+function timelineFromCSV(text) {
+  const [head, ...rows] = parseCSV(text); if (!head) return null;
+  const col = n => head.findIndex(h => norm(h) === norm(n));
+  const C = {y: col('Year'), ey: col('End Year'), dd: col('Display Date'), h: col('Headline'), t: col('Text'), m: col('Media'), mc: col('Media Credit'), cap: col('Media Caption'), ty: col('Type'), g: col('Group')};
+  if (C.y < 0 || C.h < 0) return null;
+  const tl = {title: '', eras: [], events: []};
+  for (const r of rows) {
+    const g = i => i >= 0 ? (r[i] || '').trim() : '';
+    const y = yearNum(g(C.y)); if (y == null && !g(C.h)) continue;
+    const ey = yearNum(g(C.ey)) ?? y, type = norm(g(C.ty));
+    const it = {year: y, endYear: ey, display: g(C.dd), headline: g(C.h), text: g(C.t), media: g(C.m), credit: g(C.mc), caption: g(C.cap), group: g(C.g)};
+    if (type === 'title') tl.title = it.headline;
+    else if (type === 'era') tl.eras.push(it);
+    else tl.events.push(it);
+  }
+  const byYear = (a, b) => a.year - b.year || a.endYear - b.endYear;
+  tl.eras.sort(byYear); tl.events.sort(byYear);
+  return tl;
+}
+const timelines = {};
+async function loadTimeline(w) {
+  if (!w || timelines[w.id]?.loading) return;
+  const url = timelineCsvUrl(w); if (!url) return;
+  const key = 'grimorio-linha-' + w.id;
+  if (!timelines[w.id]) { try { const c = JSON.parse(lsGet(key) || 'null'); if (c) timelines[w.id] = {...c, cached: true}; } catch {} }
+  timelines[w.id] = {...timelines[w.id], loading: true};
+  let tl = null;
+  try { const r = await fetch(url, {cache: 'no-cache'}); if (r.ok) tl = timelineFromCSV(await r.text()); } catch {}
+  if (!tl && /^https?:$/.test(location.protocol)) { try { const r = await fetch('../data/linha-do-tempo.json', {cache: 'no-cache'}); if (r.ok) tl = (await r.json())[w.id] || null; } catch {} }
+  if (tl) { tl.url = url; timelines[w.id] = tl; lsSet(key, JSON.stringify(tl)); }
+  else timelines[w.id] = {...timelines[w.id], loading: false, failed: !timelines[w.id]?.eras};
+  render();
+}
+const timelineOf = w => { const t = w && timelines[w.id]; if (!t) { loadTimeline(w); return null; } return t.eras ? t : null; };
+const eraNames = w => (timelineOf(w)?.eras || []).map(e => e.headline);
+/* janela de tempo escolhida no mapa */
+function mapWindow() {
+  const v = st.mapWhen; if (!v) return null;
+  const tl = timelineOf(curWorld());
+  if (v === 'camp') { const y = yearNum(curCamp()?.year); return y == null ? null : {from: y, to: y, label: `Ano da campanha: ${y}`}; }
+  if (v.startsWith('ano:')) { const y = yearNum(v.slice(4)); return y == null ? null : {from: y, to: y, label: `Ano ${y}`}; }
+  const [k, i] = v.split(':'), it = tl?.[k === 'era' ? 'eras' : 'events']?.[+i];
+  return it ? {from: it.year, to: it.endYear, label: it.headline, item: it, kind: k, idx: +i} : null;
+}
+const overlaps = (a1, a2, w) => { const s = a1 ?? -Infinity, e = a2 ?? Infinity; return s <= w.to && e >= w.from; };
+const placeExists = (p, w) => !w || overlaps(yearNum(p.founded), yearNum(p.ended), w);
+const loreInWindow = (l, w) => !w || (yearNum(l.yearFrom) == null && yearNum(l.yearTo) == null) || overlaps(yearNum(l.yearFrom), yearNum(l.yearTo) ?? yearNum(l.yearFrom), w);
+function whenBarHtml(w, shown, total, undated) {
+  const tl = timelineOf(w), win = mapWindow(), c = inCampaign() ? curCamp() : null;
+  const opt = (v, l) => `<option value="${esc(v)}"${st.mapWhen === v ? ' selected' : ''}>${esc(l)}</option>`;
+  const span = it => it.display || (it.year === it.endYear ? `${it.year}` : `${it.year} a ${it.endYear}`);
+  const sel = `<select id="map-when" aria-label="Período mostrado no mapa">${opt('', 'Todos os tempos')}
+    ${c && yearNum(c.year) != null ? opt('camp', `Ano da campanha (${c.year})`) : ''}
+    ${tl?.eras.length ? `<optgroup label="Eras">${tl.eras.map((e, i) => opt('era:' + i, `${e.headline} (${span(e)})`)).join('')}</optgroup>` : ''}
+    ${tl?.events.length ? `<optgroup label="Eventos">${tl.events.map((e, i) => opt('ev:' + i, `${span(e)} · ${e.headline}`)).join('')}</optgroup>` : ''}
+    ${st.mapWhen?.startsWith('ano:') ? opt(st.mapWhen, `Ano ${st.mapWhen.slice(4)}`) : ''}</select>`;
+  const it = win?.item;
+  const card = it ? `<div class="when-card">
+      ${it.media && /^https?:/.test(it.media) && !/\.(mp4|webm)$/i.test(it.media) ? `<img src="${esc(it.media)}" alt="${esc(it.caption || it.headline)}" loading="lazy" referrerpolicy="no-referrer">` : ''}
+      <div><p class="eyebrow">${win.kind === 'era' ? 'Era' : 'Evento'} · ${esc(span(it))}</p><h3>${esc(it.headline)}</h3>${it.text ? `<p>${esc(it.text)}</p>` : ''}
+      ${it.credit || it.caption ? `<p class="credit">${esc([it.caption, it.credit].filter(Boolean).join(' — '))}</p>` : ''}</div></div>` : '';
+  return `<div class="when-bar">
+      <span class="when-label">Período</span>${sel}
+      <button type="button" class="btn small" data-act="when-step" data-d="-1" aria-label="Evento anterior" title="Evento anterior"${tl?.events.length ? '' : ' disabled'}>◀</button>
+      <button type="button" class="btn small" data-act="when-step" data-d="1" aria-label="Próximo evento" title="Próximo evento"${tl?.events.length ? '' : ' disabled'}>▶</button>
+      <input id="map-year" type="text" inputmode="numeric" placeholder="ou um ano" aria-label="Ver um ano específico" value="${esc(st.mapWhen?.startsWith('ano:') ? st.mapWhen.slice(4) : '')}">
+      ${win ? `<span class="when-count">${shown} de ${total} lugares existiam${undated ? ` · ${undated} sem data aparecem sempre` : ''}</span>` : ''}
+      ${!tl && timelines[w.id]?.failed ? '<span class="when-count">Não consegui ler a planilha da linha do tempo.</span>' : ''}
+    </div>${card}`;
+}
+function whenStep(d) {
+  const tl = timelineOf(curWorld()); if (!tl?.events.length) return;
+  const win = mapWindow(); let i;
+  if (win?.kind === 'ev') i = win.idx + d;
+  else { const ref = win ? (d > 0 ? win.from : win.to) : null;
+    i = ref == null ? (d > 0 ? 0 : tl.events.length - 1)
+      : d > 0 ? tl.events.findIndex(e => e.year >= ref) : tl.events.map(e => e.year <= ref).lastIndexOf(true); }
+  if (i < 0 || i >= tl.events.length) return toast(d > 0 ? 'Este é o último evento da linha do tempo.' : 'Este é o primeiro evento da linha do tempo.');
+  st.mapWhen = 'ev:' + i; render();
 }
 
 /* ---------- mapa: envio, zoom, marcação ---------- */
@@ -1570,6 +1697,7 @@ document.addEventListener('click', async ev => {
   if (act === 'edit-lore') return loreForm(st.lore.find(n => n.id === st.sel.lore));
   if (act === 'goto-npc') { st.tab = 'npcs'; st.sel.npcs = b.dataset.id; window.scrollTo(0, 0); return render(); }
   if (act === 'goto-place') return gotoPlace(b.dataset.id, false);
+  if (act === 'when-step') return whenStep(+b.dataset.d);
   if (act === 'goto-place-map') return gotoPlace(b.dataset.id, true);
   if (act === 'goto-lore') { if (inCampaign()) st.tab = 'world'; st.wtab = 'lore'; st.sel.lore = b.dataset.id; st.fLore = ''; st.fPeriod = ''; st.q.lore = ''; window.scrollTo(0, 0); return render(); }
   if (act === 'new-lore-here') return loreForm(null, {places: [b.dataset.id]});
@@ -1611,6 +1739,12 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('change', ev => {
   if (ev.target.id === 'f-cat' && $('#f-yearFrom')) setLoreYearLabels(ev.target.value);
+  if (ev.target.id === 'map-when') { st.mapWhen = ev.target.value || null; render(); }
+  if (ev.target.id === 'map-year') { const y = yearNum(ev.target.value); st.mapWhen = y == null ? null : 'ano:' + y; render(); }
+  if (ev.target.id === 'f-period' && $('#f-yearFrom') && $('#f-cat')?.value !== 'Personagens') {
+    const era = (timelineOf(curWorld())?.eras || []).find(e => norm(e.headline) === norm(ev.target.value));
+    if (era && !$('#f-yearFrom').value && !$('#f-yearTo').value) { $('#f-yearFrom').value = era.year; $('#f-yearTo').value = era.endYear; }
+  }
   const mm = ev.target.closest?.('.multi'); if (mm) updateMultiCount(mm.id);
   if (ev.target.id === 'npc-sort') { st.npcSort = ev.target.value; render(); }
   if (ev.target.id === 'lore-period') { st.fPeriod = ev.target.value; render(); }

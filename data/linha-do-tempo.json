@@ -1,0 +1,142 @@
+{
+ "ethru": {
+  "title": "História do Império do Dragão",
+  "eras": [
+   {
+    "year": -2500,
+    "endYear": 0,
+    "display": "-2500-0 SA",
+    "headline": "Idade das Trevas",
+    "text": "Longo período de colapso que separou a primeira civilização de Ethrü da Segunda Alvorada. Durante cerca de três milênios, a luz de Uno permaneceu velada e irregular, fragmentando os povos livres em bastiões isolados.",
+    "media": "",
+    "credit": "",
+    "caption": "",
+    "group": ""
+   },
+   {
+    "year": 270,
+    "endYear": 2235,
+    "display": "270-2235 SA",
+    "headline": "Primeiro Império do Dragão",
+    "text": "Durante sete séculos, o Império mantém sua hegemonia, mas enfrenta crescente burocracia, autonomia regional e decadência cultural. A estabilidade permanece, embora sinais de desgaste se acumulem lentamente.",
+    "media": "",
+    "credit": "",
+    "caption": "",
+    "group": ""
+   },
+   {
+    "year": 2417,
+    "endYear": 2693,
+    "display": "2417-2693 SA",
+    "headline": "Segundo Império do Dragão",
+    "text": "Uma nova dinastia reunifica parte dos antigos domínios dracônicos e proclama o Segundo Império do Dragão. Embora herde seus símbolos e tradições, o novo império surge em um mundo transformado e sem o poder dos Dragões.",
+    "media": "",
+    "credit": "",
+    "caption": "",
+    "group": ""
+   }
+  ],
+  "events": [
+   {
+    "year": -3000,
+    "endYear": -3000,
+    "display": "-3000 SA",
+    "headline": "O Grande Golpe",
+    "text": "A Cabala corrompe antigas alianças e desencadeia os eventos que levam à perda da Luz.",
+    "media": "",
+    "credit": "",
+    "caption": "",
+    "group": ""
+   },
+   {
+    "year": -2500,
+    "endYear": -2500,
+    "display": "-2500 SA",
+    "headline": "A perda da luz",
+    "text": "A Luz de Uno abandona Ethrü. Os vormes espalham-se pelo mundo, surgem a Sombra do Pântano e a longa Idade das Trevas.",
+    "media": "",
+    "credit": "",
+    "caption": "",
+    "group": ""
+   },
+   {
+    "year": 0,
+    "endYear": 0,
+    "display": "0 SA",
+    "headline": "A luz de Uno retorna a Ethrü",
+    "text": "Após uma era de escuridão e isolamento entre os mundos, a luz de Uno retorna a Ethrü quando o Farol dos Príncipes Cavaleiros alcança o Reino do Horizonte. Este evento marca o início da Segunda Alvorada (SA).",
+    "media": "https://preview.redd.it/survivor-artem-chebokha-digital-2017-v0-mzw8h6r0n4721.jpg?width=1080&crop=smart&auto=webp&s=5fc6a70aad76ae690361a442f9a37ec44287eb91",
+    "credit": "Artem Chebokha",
+    "caption": "Survivor, Digital, 2017",
+    "group": ""
+   },
+   {
+    "year": 0,
+    "endYear": 187,
+    "display": "0-187 SA",
+    "headline": "A expansão dos Faróis",
+    "text": "Os Faróis espalham-se por Ethrü, permitindo que estradas, reinos e antigas rotas sejam redescobertos.",
+    "media": "https://content.encounterkit.com/cdn-cgi/image/width=3840,quality=75,format=auto/https://content.encounterkit.com/map/preview/1f080d93e6e2158cbb435262f73be059.webp",
+    "credit": "Cze Peku",
+    "caption": "Chthonic Lighthouse",
+    "group": ""
+   },
+   {
+    "year": 187,
+    "endYear": 187,
+    "display": "187 SA",
+    "headline": "Fundação do reino de Jørgen",
+    "text": "Membros da Ordem dos Príncipes Cavaleiros estabelecem o Reino de Jørgen nas terras ocidentais de Ethrü. O reino torna-se um dos principais centros de cultura, cavalaria e expansão da nova era.",
+    "media": "https://images7.alphacoders.com/685/thumb-1920-685329.jpg",
+    "credit": "Darek Zabrocki",
+    "caption": "The Coronation of the Fantasy Warrior",
+    "group": ""
+   },
+   {
+    "year": 270,
+    "endYear": 270,
+    "display": "270 SA",
+    "headline": "Fundação do Império do Dragão",
+    "text": "Jørgen une seu reino à antiga Draconia, criando o Império do Dragão. Os \"verdadeiros Dragões\" tornam-se o símbolo e a base do novo poder imperial, inaugurando uma era de expansão e centralização.",
+    "media": "https://cdnb.artstation.com/p/assets/images/images/008/437/197/large/dr4gon-5oul-5.jpg?1512756450",
+    "credit": "dr4gon 5oul",
+    "caption": "friendship",
+    "group": ""
+   },
+   {
+    "year": 635,
+    "endYear": 635,
+    "display": "635 SA",
+    "headline": "Sigrearn é anexado ao Império",
+    "text": "Após campanhas militares e acordos políticos, Sigrearn é incorporada ao Império do Dragão. A anexação marca o auge da expansão territorial imperial e fortalece sua influência sobre o continente.",
+    "media": "https://www.meisterdrucke.us/kunstwerke/1260px/James_William_Edmund_Doyle_-_Illustration_of_King_John_signing_the_Magna_Carta_19th_century_-_%28MeisterDrucke-1144016%29.jpg",
+    "credit": "James William Edmund Doyle",
+    "caption": "Illustration of King John Signing the Magna Carta, 19th century",
+    "group": ""
+   },
+   {
+    "year": 1994,
+    "endYear": 1994,
+    "display": "2108 SA",
+    "headline": "Revoada dos dragões cruza o Império",
+    "text": "Um levante dos dragões abala a ordem estabelecida em todo o continente. O evento enfraquece o Império do Dragão e os reinos da Aliança, desencadeando uma crise sem precedentes.",
+    "media": "https://illustrationwest.org/59/files/2020/05/Gerard-Dragon-Swarm-smaller.jpg",
+    "credit": "Justin Gerard",
+    "caption": "A Plague of Dragons",
+    "group": ""
+   },
+   {
+    "year": 2108,
+    "endYear": 2235,
+    "display": "2108-2235 SA",
+    "headline": "Fragmentação e queda do Império",
+    "text": "Os Dragões são destituídos, encerrando a legitimidade do Império do Dragão. Sem sua autoridade, o império se fragmenta em reinos rivais e inicia um longo período de conflitos sucessórios.",
+    "media": "https://www.czepeku.com/_next/image?url=https%3A%2F%2Fcdn.shopify.com%2Fs%2Ffiles%2F1%2F0817%2F6700%2F6515%2Ffiles%2F2d8dd65890bae2911c85ce56228ab0bf.webp%3Fv%3D1701717687&w=3840&q=75",
+    "credit": "Cze Peku",
+    "caption": "Royal Throne Room, Original Night",
+    "group": ""
+   }
+  ],
+  "url": "snapshot"
+ }
+}

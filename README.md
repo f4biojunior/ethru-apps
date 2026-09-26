@@ -23,6 +23,12 @@ Abra o app pelo GitHub Pages: https://f4biojunior.github.io/ethru-apps/
 - **O administrador** usa o botão **Editores** para autorizar e-mails.
 - Quem controla o acesso são as regras do Firestore, no console do Firebase. A configuração em `grimorio/firebase-config.js` é pública por natureza.
 
+### Linha do tempo
+
+As eras e os eventos vêm da planilha da TimelineJS de Ethrü. Para trocar a planilha, edite o mundo e cole o link novo em **Linha do tempo**. O app lê a planilha sempre que abre. Se não conseguir, usa a cópia em `data/linha-do-tempo.json`.
+
+No mapa, o seletor **Período** mostra só os lugares que existiam na era, no evento ou no ano escolhido. As setas ◀ ▶ passam de um evento para o outro. Um lugar usa os campos *Existe desde* e *Deixou de existir em*, e lugares sem data aparecem sempre.
+
 ### Backup automático
 
 O GitHub Actions (`.github/workflows/backup-firebase.yml`) copia o banco do Firebase nos **dias 1 e 16 de cada mês** para o branch **`backups`**. Ficam guardados só os **2 backups mais recentes**, e o branch é recriado a cada vez, sem acumular histórico.
