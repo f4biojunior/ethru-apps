@@ -1408,6 +1408,7 @@ async function importData(file) {
       const existing = await store.list(`worlds/${wid}/${k}`); const names = new Set(existing.map(x => norm(x.name || x.title)));
       for (const d of (e[k] || [])) if (!names.has(norm(d.name || d.title)) && !existing.some(x => x.id === d.id)) await store.put(`worlds/${wid}/${k}`, d.id || uid(), strip(d));
     }
+    if (store.mode === 'firebase' && !same && e.map?.length) for (const d of e.map) await store.put(`worlds/${wid}/map`, d.id, strip(d));
   }
   for (const e of data.campaigns) {
     const cid = uid(); const c = strip(e.campaign || {});

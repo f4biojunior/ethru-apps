@@ -23,6 +23,14 @@ Abra o app pelo GitHub Pages: https://f4biojunior.github.io/ethru-apps/
 - **O administrador** usa o botão **Editores** para autorizar e-mails.
 - Quem controla o acesso são as regras do Firestore, no console do Firebase. A configuração em `grimorio/firebase-config.js` é pública por natureza.
 
+### Backup automático
+
+O GitHub Actions (`.github/workflows/backup-firebase.yml`) copia o banco do Firebase nos **dias 1 e 16 de cada mês** para o branch **`backups`**. Ficam guardados só os **2 backups mais recentes**, e o branch é recriado a cada vez, sem acumular histórico.
+
+- Para fazer um backup na hora: *Actions → Backup do Firebase → Run workflow*.
+- Para restaurar: baixe o `.json` do branch `backups`, abra o Grimório com a conta de administrador e use **Importar**.
+- A lista de editores não entra no backup, porque é privada.
+
 ### Dados iniciais
 
 `data/grimorio.json` e `data/mapa-ethru.jpg` guardam a cópia inicial do mundo e das campanhas. Com o banco vazio, o administrador clica em **Trazer os dados publicados** para copiá-los para o Firebase.
