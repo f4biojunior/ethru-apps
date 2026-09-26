@@ -175,6 +175,19 @@ body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [dat
 .field textarea{min-height:96px;resize:vertical}
 .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
+/* escolha múltipla e lore ligado */
+.multi{border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px}
+.multi-q{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 10px;margin-bottom:6px}
+.multi-list{max-height:220px;overflow-y:auto;display:flex;flex-direction:column}
+.multi-opt{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;cursor:pointer}
+.multi-opt:hover{background:var(--surface-2)}
+.multi-opt input{accent-color:var(--accent);width:16px;height:16px;flex:0 0 auto}
+.multi-opt small{margin-left:auto;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.multi-count{font-size:13px;color:var(--muted);margin-top:6px}
+.lore-links{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.lore-link{width:100%;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column}
+.lore-link:hover{border-color:var(--accent)}
+.lore-link span{font-size:13px;color:var(--muted)}
 /* dados */
 .dice-fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:10;width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);box-shadow:var(--shadow);cursor:pointer;display:grid;place-items:center}
 .dice-fab svg{width:30px;height:30px}
@@ -523,12 +536,16 @@ async function createSample() {
 
 /* ---------- formulários (modal) ---------- */
 let modalState = null;
-function openForm(cfg) { modalState = cfg; renderModal(); setTimeout(() => $('#modal input, #modal textarea, #modal select')?.focus(), 30); }
+function openForm(cfg) { modalState = cfg; renderModal(); cfg.fields.filter(f => f.type === 'multi').forEach(f => updateMultiCount('f-' + f.id)); setTimeout(() => $('#modal input, #modal textarea, #modal select')?.focus(), 30); }
 function closeForm() { modalState = null; $('#modal').innerHTML = ''; }
 function fieldHtml(f) {
   const id = 'f-' + f.id, v = f.value ?? '';
   let ctl;
   if (f.type === 'textarea') ctl = `<textarea id="${id}" placeholder="${esc(f.ph || '')}">${esc(v)}</textarea>`;
+  else if (f.type === 'multi') ctl = !f.options.length ? `<p class="world-note" id="${id}">${esc(f.empty || 'Nada para escolher ainda.')}</p>`
+    : `<div class="multi" id="${id}">${f.options.length > 6 ? `<input type="search" class="multi-q" data-multi="${id}" placeholder="Filtrar…" aria-label="Filtrar opções">` : ''}
+      <div class="multi-list">${f.options.map(([val, lab, sub]) => `<label class="multi-opt" data-lab="${esc(norm(lab + ' ' + (sub || '')))}"><input type="checkbox" value="${esc(val)}"${(f.value || []).includes(val) ? ' checked' : ''}><span>${esc(lab)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}</label>`).join('')}</div>
+      <p class="multi-count" id="${id}-n"></p></div>`;
   else if (f.type === 'select') ctl = `<select id="${id}">${f.options.map(([val, lab]) => `<option value="${esc(val)}"${String(val) === String(v) ? ' selected' : ''}>${esc(lab)}</option>`).join('')}</select>`;
   else ctl = `<input id="${id}" type="${f.type || 'text'}" value="${esc(v)}" placeholder="${esc(f.ph || '')}"${f.list ? ` list="${id}-l"` : ''}${f.required ? ' required' : ''}>` +
     (f.list ? `<datalist id="${id}-l">${f.list.map(o => `<option value="${esc(o)}"></option>`).join('')}</datalist>` : '');
@@ -541,7 +558,12 @@ function renderModal() {
     <div class="modal-foot"><button type="button" class="btn ghost" data-act="modal-close">Cancelar</button><button class="btn primary">${esc(m.submit || 'Salvar')}</button></div>
   </form></div>`;
 }
-function readForm() { const o = {}; for (const f of modalState.fields) o[f.id] = ($('#f-' + f.id)?.value ?? '').trim(); return o; }
+function readForm() {
+  const o = {};
+  for (const f of modalState.fields) o[f.id] = f.type === 'multi' ? [...document.querySelectorAll(`#f-${f.id} input[type=checkbox]:checked`)].map(i => i.value) : ($('#f-' + f.id)?.value ?? '').trim();
+  return o;
+}
+function updateMultiCount(id) { const n = document.querySelectorAll(`#${id} input[type=checkbox]:checked`).length, el = document.getElementById(id + '-n'); if (el) el.textContent = n ? (n === 1 ? '1 lugar selecionado' : n + ' lugares selecionados') : 'Nenhum lugar selecionado'; }
 
 function worldForm(w) {
   openForm({
@@ -680,7 +702,8 @@ function placeForm(p, pos) {
   });
 }
 
-function loreForm(n) {
+function loreForm(n, preset) {
+  const placeOpts = [...st.places].sort((a, b) => (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99) || byName(a, b)).map(p => [p.id, p.name, p.type]);
   openForm({
     title: n ? 'Editar lore' : `Novo registro de lore de ${curWorld()?.name || 'mundo'}`, submit: n ? 'Salvar' : 'Adicionar',
     intro: 'O lore pertence ao mundo e fica disponível em todas as campanhas que se passam nele.',
@@ -690,6 +713,7 @@ function loreForm(n) {
       {id: 'period', label: 'Período da história', value: n?.period ?? st.fPeriod, ph: 'Ex.: Era das Cinzas', list: uniq(st.lore.map(x => x.period))},
       {id: 'yearFrom', label: 'Ano ou início (opcional)', value: n?.yearFrom, ph: 'Ex.: 212'},
       {id: 'yearTo', label: 'Até o ano, se durou (opcional)', value: n?.yearTo, ph: 'Ex.: 350'},
+      {id: 'places', label: 'Lugares relacionados no mapa', type: 'multi', full: true, value: n?.places ?? (preset?.places || []), options: placeOpts, empty: 'Nenhuma localidade cadastrada ainda.'},
       {id: 'body', label: 'Texto', type: 'textarea', value: n?.body, full: true}
     ],
     onSubmit: async v => {
@@ -1108,6 +1132,10 @@ function placeDetail(p, compact) {
     ${(p.tags || []).length ? `<div class="tags">${p.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
     ${children.length ? `<div class="section-h"><h3>Lugares dentro de ${esc(p.name)}</h3><small>${children.length}</small></div>
       <div class="people">${children.map(c => `<button class="person" data-act="goto-place" data-id="${esc(c.id)}">${esc(c.name)} <span class="type-badge">${esc(c.type)}</span></button>`).join('')}</div>` : ''}
+    <div class="section-h"><h3>Lore relacionado</h3><small>${loreOfPlace(p).length}</small></div>
+    ${loreOfPlace(p).length ? `<ul class="lore-links">${loreOfPlace(p).map(l => `<li><button class="lore-link" data-act="goto-lore" data-id="${esc(l.id)}"><b>${esc(l.title)}</b><span>${esc([l.cat, periodLabel(l)].filter(Boolean).join(' · '))}</span></button></li>`).join('')}</ul>`
+      : '<p class="world-note">Nada do lore ligado a este lugar ainda.</p>'}
+    <p style="margin-top:8px"><button class="btn small ghost" data-act="new-lore-here" data-id="${esc(p.id)}">+ Lore sobre ${esc(p.name)}</button></p>
     <div class="section-h"><h3>Crônica do lugar</h3><span class="scope world">${esc(curWorld()?.name)}</span></div>
     <p class="world-note">Fatos e história que valem para todas as campanhas.</p>
     <form class="adder" data-form="place-entry">
@@ -1119,6 +1147,8 @@ function placeDetail(p, compact) {
   </article>`;
 }
 
+const lorePlaces = n => (n.places || []).map(id => st.places.find(p => p.id === id)).filter(Boolean);
+const loreOfPlace = p => st.lore.filter(l => (l.places || []).includes(p.id)).sort((a, b) => (yearNum(a.yearFrom) ?? 1e9) - (yearNum(b.yearFrom) ?? 1e9) || byName(a, b));
 /* período da história: texto livre + anos opcionais para ordenar */
 const yearNum = y => { const m = String(y ?? '').match(/-?\d+/); return m ? +m[0] : null; };
 function periodLabel(n) {
@@ -1137,7 +1167,7 @@ function viewLore() {
   const cats = LORE_CATS.filter(c => st.lore.some(n => n.cat === c));
   const periods = uniq(st.lore.map(n => n.period));
   const items = list.length ? list.map(n => `<li><button class="item" data-act="sel" data-kind="lore" data-id="${esc(n.id)}" aria-current="${n.id === st.sel.lore}" style="grid-template-columns:minmax(0,1fr)">
-      <span><b>${esc(n.title)}</b><span class="sub">${esc([n.cat, periodLabel(n)].filter(Boolean).join(' · '))}</span></span></button></li>`).join('')
+      <span><b>${esc(n.title)}</b><span class="sub">${esc([n.cat, periodLabel(n), lorePlaces(n).length && (lorePlaces(n).length === 1 ? lorePlaces(n)[0].name : lorePlaces(n).length + ' lugares')].filter(Boolean).join(' · '))}</span></span></button></li>`).join('')
     : `<li class="empty">${st.lore.length ? 'Nada encontrado.' : (st.loaded.lore ? `Sem lore de ${esc(curWorld()?.name)} ainda. Registre história, personagens, divindades, facções, povos…` : 'Carregando…')}</li>`;
   return `<div class="work${sel ? ' has-sel' : ''}">
     <section class="pane list-pane">${listHead('lore', 'Buscar no lore…', 'new-lore', '+ Novo')}
@@ -1152,6 +1182,8 @@ function viewLore() {
         ${periodLabel(sel) ? `<p class="epithet">${esc(periodLabel(sel))}</p>` : ''}</div>
         <div class="actions"><button class="btn small" data-act="edit-lore">Editar</button>${confirmBtn('lore:' + sel.id)}</div></div>
         <p class="prose" style="margin-top:18px">${esc(sel.body) || '<span style="color:var(--muted)">Sem texto.</span>'}</p>
+        ${lorePlaces(sel).length ? `<div class="section-h"><h3>Lugares relacionados</h3><small>${lorePlaces(sel).length}</small></div>
+          <div class="people">${lorePlaces(sel).map(p => `<button class="person" data-act="goto-place-map" data-id="${esc(p.id)}" title="Ver no mapa"><span class="pin ${pinClass(p.type)}" style="position:static;transform:none;pointer-events:none"><span class="mk"></span></span>${esc(p.name)}</button>`).join('')}</div>` : ''}
         <p class="shared-hint">Atualizado em ${fmtDate(sel.updatedAt)} · vale para todas as campanhas em ${esc(curWorld()?.name)}</p></article>`
       : '<div class="detail-empty">Escolha um registro de lore.</div>'}</section>
   </div>`;
@@ -1518,6 +1550,9 @@ document.addEventListener('click', async ev => {
   if (act === 'edit-lore') return loreForm(st.lore.find(n => n.id === st.sel.lore));
   if (act === 'goto-npc') { st.tab = 'npcs'; st.sel.npcs = b.dataset.id; window.scrollTo(0, 0); return render(); }
   if (act === 'goto-place') return gotoPlace(b.dataset.id, false);
+  if (act === 'goto-place-map') return gotoPlace(b.dataset.id, true);
+  if (act === 'goto-lore') { if (inCampaign()) st.tab = 'world'; st.wtab = 'lore'; st.sel.lore = b.dataset.id; st.fLore = ''; st.fPeriod = ''; st.q.lore = ''; window.scrollTo(0, 0); return render(); }
+  if (act === 'new-lore-here') return loreForm(null, {places: [b.dataset.id]});
   if (act === 'show-on-map') return gotoPlace(st.sel.places, true);
   if (act === 'pin') { st.sel.places = b.dataset.id; st.confirm = null; return render(); }
   if (act === 'goto-session') { const s = st.sessions.find(x => String(x.num) === String(b.dataset.num)); if (s) { st.tab = 'sessions'; st.sel.sessions = s.id; window.scrollTo(0, 0); render(); } else toast('Essa sessão não está registrada.'); return; }
@@ -1551,8 +1586,11 @@ document.addEventListener('submit', async ev => {
 
 document.addEventListener('input', ev => {
   const q = ev.target.dataset?.q; if (q) { st.q[q] = ev.target.value; render(); }
+  const mq = ev.target.dataset?.multi;
+  if (mq) { const t = norm(ev.target.value); document.querySelectorAll(`#${mq} .multi-opt`).forEach(l => l.hidden = !!t && !l.dataset.lab.includes(t)); }
 });
 document.addEventListener('change', ev => {
+  const mm = ev.target.closest?.('.multi'); if (mm) updateMultiCount(mm.id);
   if (ev.target.id === 'npc-sort') { st.npcSort = ev.target.value; render(); }
   if (ev.target.id === 'lore-period') { st.fPeriod = ev.target.value; render(); }
   if (ev.target.id === 'lore-sort') { st.loreSort = ev.target.value; render(); }
