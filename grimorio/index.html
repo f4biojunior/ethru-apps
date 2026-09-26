@@ -1,0 +1,1496 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+</head>
+<body>
+<title>Grimório de Campanhas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,500;0,700;1,500&family=Alegreya+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#EDF1F0; --surface:#FBFCFC; --surface-2:#E2E9E7; --ink:#17211F; --muted:#56635F; --line:#CBD6D3;
+  --accent:#1E6B64; --accent-ink:#FFFFFF; --accent-soft:#D3E7E3; --gold:#9A6B12;
+  --ally:#2E7D4F; --foe:#B23A3A; --neutral:#6B6F80; --unknown:#7D63A8;
+  --shadow:0 12px 40px rgba(20,40,36,.18);
+  --serif:"Alegreya",Georgia,"Times New Roman",serif;
+  --sans:"Alegreya Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#111716; --surface:#18201F; --surface-2:#222C2A; --ink:#E4ECEA; --muted:#93A39E; --line:#2E3B38;
+    --accent:#5FC1B3; --accent-ink:#0C1413; --accent-soft:#1F3632; --gold:#D9A640;
+    --ally:#6BC08D; --foe:#E57373; --neutral:#A2A6B8; --unknown:#B49BDB; --shadow:0 12px 40px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#111716; --surface:#18201F; --surface-2:#222C2A; --ink:#E4ECEA; --muted:#93A39E; --line:#2E3B38;
+  --accent:#5FC1B3; --accent-ink:#0C1413; --accent-soft:#1F3632; --gold:#D9A640;
+  --ally:#6BC08D; --foe:#E57373; --neutral:#A2A6B8; --unknown:#B49BDB; --shadow:0 12px 40px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;padding-inline:16px;padding-bottom:96px}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--serif);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto}
+
+/* barra superior */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-block:12px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-weight:700;font-size:20px;letter-spacing:.01em}
+.brand svg{width:26px;height:26px;color:var(--accent)}
+.camp-switch{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;cursor:pointer;max-width:100%;min-width:0}
+.camp-switch b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.camp-switch span{color:var(--muted);font-size:14px;white-space:nowrap}
+.camp-switch:hover{border-color:var(--accent)}
+.bar-actions{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mode{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.mode i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
+.mode.local i{background:var(--gold)}
+
+/* botões */
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn.ghost{background:transparent}
+.btn.small{padding:4px 10px;font-size:14px}
+.btn.danger{color:var(--foe)}
+.btn.danger.armed{background:var(--foe);border-color:var(--foe);color:#fff}
+.x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:6px}
+.x:hover{color:var(--foe)}
+.x.armed{background:var(--foe);color:#fff}
+
+/* abas */
+.tabs{display:flex;gap:4px;margin-block:18px 14px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{border:0;background:transparent;padding:10px 14px;cursor:pointer;font-family:var(--serif);font-size:18px;font-weight:500;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--accent);font-weight:700}
+.tab small{font-family:var(--sans);font-size:13px;color:var(--muted);margin-left:4px;font-variant-numeric:tabular-nums}
+
+/* mestre-detalhe */
+.work{display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:20px;align-items:start}
+.pane{min-width:0}
+.toolbar{display:flex;gap:8px;margin-bottom:10px}
+.toolbar input,.toolbar select{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px}
+.toolbar select{flex:0 0 auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:3px 11px;font-size:14px;cursor:pointer;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:500}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.item{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;width:100%;text-align:left;background:transparent}
+.item:hover{background:var(--surface-2)}
+.item[aria-current="true"]{background:var(--surface);border-color:var(--line)}
+.item .dot{width:10px;height:10px;border-radius:50%;margin-top:7px;background:var(--neutral)}
+.item b{display:block;font-weight:700;overflow-wrap:anywhere}
+.item .sub{display:block;font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.item .meta{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding-top:2px}
+.num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700}
+.dot.aliado,.disp.aliado{--c:var(--ally)} .dot.hostil,.disp.hostil{--c:var(--foe)} .dot.neutro,.disp.neutro{--c:var(--neutral)} .dot.desconhecido,.disp.desconhecido{--c:var(--unknown)}
+.dot{background:var(--c,var(--neutral))!important}
+.dead b{text-decoration:line-through;text-decoration-color:var(--muted)}
+
+.detail{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;min-width:0}
+.detail-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px}
+.detail h2{font-size:30px}
+.epithet{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:18px;margin-top:2px}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 20px;margin:20px 0;padding:14px 0;border-block:1px solid var(--line)}
+.facts div{min-width:0}
+.facts dt{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.facts dd{margin:2px 0 0;overflow-wrap:anywhere}
+.disp{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--c)}
+.disp::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c)}
+.pill{display:inline-block;border-radius:999px;padding:1px 10px;font-size:13px;font-weight:700;background:var(--surface-2);color:var(--muted)}
+.pill.warn{background:color-mix(in srgb,var(--foe) 16%,transparent);color:var(--foe)}
+.pill.ok{background:color-mix(in srgb,var(--ally) 16%,transparent);color:var(--ally)}
+.pill.gold{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold)}
+.prose{white-space:pre-wrap;max-width:68ch;overflow-wrap:anywhere}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.tag{font-size:13px;color:var(--accent);border:1px solid var(--accent-soft);background:var(--accent-soft);border-radius:6px;padding:0 8px}
+.section-h{display:flex;align-items:baseline;gap:8px;margin:28px 0 12px}
+.section-h h3{font-size:21px}
+.section-h small{color:var(--muted);font-variant-numeric:tabular-nums}
+
+.adder{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.adder textarea{width:100%;min-height:64px;resize:vertical;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:10px 12px}
+.adder .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.adder select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 10px;max-width:100%}
+.adder .hint{font-size:13px;color:var(--muted);margin-right:auto}
+
+.timeline{list-style:none;margin:0;padding:0 0 0 18px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:14px}
+.timeline li{position:relative}
+.timeline li::before{content:"";position:absolute;left:-24px;top:7px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.tl-meta{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.tl-meta .x{margin-left:auto}
+.tl-text{white-space:pre-wrap;overflow-wrap:anywhere}
+.link{border:0;background:none;padding:0;color:var(--accent);cursor:pointer;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.people{display:flex;gap:8px;flex-wrap:wrap}
+.person{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 12px 3px 8px;background:var(--bg);cursor:pointer}
+.person .dot{width:8px;height:8px;border-radius:50%}
+
+.empty{color:var(--muted);padding:24px 8px;text-align:center}
+.detail-empty{border:1px dashed var(--line);border-radius:12px;padding:40px 24px;text-align:center;color:var(--muted)}
+.back{display:none;margin-bottom:10px}
+
+/* seletor de campanha */
+.picker{max-width:880px;margin:40px auto 0}
+.picker h1{font-size:clamp(28px,5vw,40px)}
+.picker .lead{color:var(--muted);margin:10px 0 28px;max-width:62ch}
+.camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.camp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.camp.last{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.camp h2{font-size:22px;overflow-wrap:anywhere}
+.camp .sys{font-size:14px;color:var(--muted)}
+.camp .year{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--gold)}
+.camp .world{font-size:15px;overflow-wrap:anywhere}
+.camp .row{display:flex;gap:6px;margin-top:auto;padding-top:8px;flex-wrap:wrap}
+.camp-new{border:1px dashed var(--line);background:transparent;border-radius:12px;padding:18px;cursor:pointer;color:var(--muted);font-family:var(--serif);font-size:20px;min-height:150px}
+.camp-new:hover{border-color:var(--accent);color:var(--accent)}
+.picker-foot{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:14px}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(10,18,16,.5);display:flex;align-items:flex-start;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) 16px 24px;z-index:20;overflow-y:auto}
+.modal{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);width:100%;max-width:620px;padding:22px}
+.modal h2{font-size:24px;margin-bottom:16px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field.full{grid-column:1/-1}
+.field label{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.field input,.field select,.field textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 11px;width:100%}
+.field textarea{min-height:96px;resize:vertical}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+
+/* dados */
+.dice-fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:10;width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);box-shadow:var(--shadow);cursor:pointer;display:grid;place-items:center}
+.dice-fab svg{width:30px;height:30px}
+.dice{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:10;width:min(340px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px}
+.dice h3{font-size:18px;margin-bottom:10px}
+.dice form{display:flex;gap:6px}
+.dice input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 10px;font-family:var(--mono)}
+.dice-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.dice-quick button{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 0;cursor:pointer;font-family:var(--mono);font-size:14px}
+.dice-quick button:hover{border-color:var(--accent)}
+.dice-quick .wide{grid-column:span 2;font-family:var(--sans)}
+.dice-result{margin-top:14px;padding:12px;border-radius:10px;background:var(--bg);text-align:center}
+.dice-result .total{font-family:var(--mono);font-size:44px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.dice-result .total.crit{color:var(--gold)} .dice-result .total.fumble{color:var(--foe)}
+.dice-result .break{font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
+.dice-hist{list-style:none;margin:10px 0 0;padding:0;max-height:130px;overflow-y:auto;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.dice-hist li{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid var(--line)}
+.dice-hist b{color:var(--ink)}
+.dice .err{color:var(--foe);font-size:13px;margin-top:6px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;z-index:30;box-shadow:var(--shadow);max-width:calc(100vw - 32px);font-weight:500}
+
+/* mundo */
+.picker-sec{margin-top:36px}
+.picker-sec:first-of-type{margin-top:0}
+.picker-sec>.eyebrow{margin-bottom:10px}
+.world-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 20px;align-items:center}
+.world-card h2{font-size:30px;letter-spacing:.01em}
+.world-card p{color:var(--muted);max-width:60ch}
+.world-card .row{display:flex;gap:6px;flex-wrap:wrap}
+.world-note{font-size:14px;color:var(--muted);margin:-4px 0 14px;display:flex;gap:6px;align-items:baseline}
+.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.type-badge{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.map-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);gap:20px;align-items:start}
+.map-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.zoom{font-family:var(--mono);font-size:13px;min-width:48px;text-align:center;color:var(--muted);font-variant-numeric:tabular-nums}
+.map-tools .spacer{flex:1}
+.placing-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:15px}
+.placing-bar span{flex:1;min-width:0}
+.map-view{position:relative;overflow:hidden;height:min(72vh,720px);min-height:340px;border:1px solid var(--line);border-radius:12px;background:#2a2f2e;cursor:grab;touch-action:none;overscroll-behavior:contain;user-select:none;-webkit-user-select:none}
+.map-view:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.map-view.dragging{cursor:grabbing}
+.map-view.placing{cursor:crosshair}
+.map-canvas{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.map-canvas img{display:block;width:100%;height:100%;max-width:none;pointer-events:none}
+.pin{position:absolute;transform:translate(-50%,-50%) scale(calc(1 / var(--s, 1)));border:0;background:transparent;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px;z-index:1}
+.map-ctl{position:absolute;z-index:3;display:grid;gap:4px}
+.map-ctl button{width:36px;height:36px;border-radius:8px;border:1px solid rgba(0,0,0,.25);background:rgba(251,252,252,.94);color:#17211F;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.35);display:grid;place-items:center;padding:0}
+.map-ctl button:hover{background:#fff}
+.zoom-btns{top:10px;right:10px}
+.dpad{bottom:10px;left:10px;grid-template-columns:repeat(3,32px);grid-template-rows:repeat(3,32px)}
+.dpad button{width:32px;height:32px;font-size:12px}
+.dpad .up{grid-area:1/2}.dpad .left{grid-area:2/1}.dpad .mid{grid-area:2/2;font-size:10px}.dpad .right{grid-area:2/3}.dpad .down{grid-area:3/2}
+.zoom-ctl{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.zoom-ctl input{width:150px;accent-color:var(--accent)}
+.map-hint{font-size:13px;color:var(--muted);margin-top:8px}
+.pin .mk{display:block;width:12px;height:12px;border-radius:50%;background:#1E6B64;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.6);flex:0 0 auto}
+.pin .lb{position:absolute;left:calc(100% + 2px);top:50%;transform:translateY(-50%);white-space:nowrap;font-size:12px;font-weight:700;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000,0 1px 2px #000;pointer-events:auto;cursor:pointer;padding:2px 4px;margin:-2px -4px;border-radius:4px}
+.pin:hover .lb{color:#FFE9A8;background:rgba(0,0,0,.25)}
+.map-view.nolabels .pin .lb{display:none}
+.pin.hid{display:none}
+.pin.nolb .lb{display:none}
+.pin.nolb:hover .lb{display:block}
+.map-view.nolabels .pin:hover .lb,.pin.sel .lb{display:block}
+.pin.t-capital .mk{width:18px;height:18px;background:#1E6B64;box-shadow:0 0 0 2px #1E6B64,0 1px 5px rgba(0,0,0,.6)}
+.pin.t-capital .lb{font-size:14px}
+.pin.t-cidade .mk{width:14px;height:14px}
+.pin.t-vila .mk{width:11px;height:11px;background:#3E8C84}
+.pin.t-vilarejo .mk{width:8px;height:8px;background:#5AA79E;border-width:1.5px}
+.pin.t-forte .mk{border-radius:2px;background:#8A3434;width:13px;height:13px}
+.pin.t-templo .mk{border-radius:1px;background:#6A4FA0;width:11px;height:11px;transform:rotate(45deg)}
+.pin.t-ruina .mk{border-radius:0;background:#fff;width:14px;height:12px;border:0;clip-path:polygon(50% 0,100% 100%,0 100%);box-shadow:none;position:relative}
+.pin.t-ruina .mk::after{content:"";position:absolute;inset:2px 2.5px 1.5px;background:#4d4d4d;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.pin.t-natureza .mk{background:transparent;border:2.5px solid #2E7D3A;box-shadow:0 0 0 1.5px #fff,0 1px 4px rgba(0,0,0,.6)}
+.pin.t-regiao .mk{display:none}
+.pin.t-regiao .lb{position:static;transform:none;font-family:var(--serif);font-style:italic;font-size:16px;letter-spacing:.12em;text-transform:uppercase;display:block!important}
+.pin.sel .mk{outline:3px solid #F2C94C;outline-offset:2px}
+.pin.sel .lb{color:#FFE9A8}
+.pin:focus-visible .mk{outline:3px solid #F2C94C}
+.map-empty{border:1px dashed var(--line);border-radius:12px;padding:48px 24px;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:12px}
+.map-empty h3{color:var(--ink);font-size:22px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .pin{position:static;transform:none;pointer-events:none}
+.unplaced{margin-top:14px;font-size:14px;color:var(--muted)}
+.unplaced .people{margin-top:6px}
+.side-empty{border:1px dashed var(--line);border-radius:12px;padding:28px 20px;color:var(--muted)}
+.side-empty h3{color:var(--ink);font-size:19px;margin-bottom:6px}
+.section-h{flex-wrap:wrap}
+.scope{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:6px}
+.scope.world{background:var(--surface-2);color:var(--muted)}
+.scope.camp{background:var(--accent-soft);color:var(--accent)}
+.shared-hint{font-size:13px;color:var(--muted);margin-top:14px}
+
+@media (max-width:1040px){ .map-layout{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:600px){ .map-view{height:62vh} .zoom-ctl input{width:110px} .map-hint{display:none} }
+@media (max-width:860px){
+  .work{grid-template-columns:minmax(0,1fr)}
+  .world-card{grid-template-columns:minmax(0,1fr)}
+  .work.has-sel .list-pane{display:none}
+  .work:not(.has-sel) .detail-pane{display:none}
+  .back{display:inline-block}
+  .detail{padding:18px}
+  .detail h2{font-size:25px}
+  .form{grid-template-columns:1fr}
+  .bar-actions .btn span{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .dice-result .total{animation:pop .25s ease-out}
+  @keyframes pop{from{transform:scale(.8);opacity:.3}to{transform:none;opacity:1}}
+}
+</style>
+
+<div class="wrap">
+  <header class="bar" id="bar"></header>
+  <main id="main"><div class="empty">Abrindo o grimório…</div></main>
+</div>
+<div id="modal"></div>
+<div id="dice"></div>
+<div id="toast"></div>
+<input type="file" id="import-file" accept="application/json,.json" hidden>
+<input type="file" id="map-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+
+<script>
+const SAMPLE = {"campaign": {"name": "Exemplo: O Segredo do Farol", "system": "D&D 5e", "role": "Mestre", "players": "Ana (Lyra), Bruno (Thorek), Caio (Nix)", "desc": "Campanha de exemplo para mostrar como o app funciona. Pode excluir quando quiser.", "example": true, "region": "Porto Cinzento"}, "npcs": [{"id": "ex-mirelle", "name": "Mirelle Voss", "epithet": "A Guardiã do Farol", "kind": "NPC", "ancestry": "Humana", "disp": "aliado", "status": "vivo", "faction": "Ordem do Farol", "location": "Porto Cinzento", "firstSeen": "1", "desc": "Velha faroleira que conhece todas as correntes entre as ilhas. Fala por enigmas quando está nervosa.", "tags": ["informante", "Porto Cinzento"], "entries": [{"id": "e1", "text": "Ofereceu abrigo ao grupo durante a tempestade de cinzas.", "session": 1, "at": "2026-08-29T21:40:00.000Z"}, {"id": "e2", "text": "Revelou que o farol esconde um mapa das rotas submersas. Pediu segredo sobre isso.", "session": 2, "at": "2026-09-05T22:10:00.000Z"}]}, {"id": "ex-aldric", "name": "Barão Aldric Thorne", "epithet": "O Senhor das Minas", "kind": "NPC", "ancestry": "Humano", "disp": "hostil", "status": "vivo", "faction": "Casa Thorne", "location": "Fortaleza de Obsidiana", "firstSeen": "2", "desc": "Controla as minas de pedra-brasa. Educado em público, implacável nos bastidores.", "tags": ["nobreza", "vilão?"], "entries": [{"id": "e3", "text": "Contratou mercenários para seguir o grupo depois da visita ao farol.", "session": 2, "at": "2026-09-05T23:05:00.000Z"}, {"id": "e4", "text": "Negou conhecer o culto, mas usava um anel com a chama invertida. Thorek percebeu.", "session": 3, "at": "2026-09-19T22:30:00.000Z"}]}, {"id": "ex-kesh", "name": "Kesh", "epithet": "Olho-de-Vidro", "kind": "NPC", "ancestry": "Goblin", "disp": "neutro", "status": "vivo", "faction": "Mercado Negro", "location": "Docas Baixas", "firstSeen": "3", "desc": "Receptador que vende qualquer coisa, inclusive informação sobre quem compra dele.", "tags": ["comerciante"], "entries": [{"id": "e5", "text": "Vendeu ao grupo a chave da cripta por 40 po. Ficou devendo um favor ao Nix.", "session": 3, "at": "2026-09-19T21:15:00.000Z"}]}, {"id": "ex-oona", "name": "Irmã Oona", "epithet": "", "kind": "NPC", "ancestry": "Tiefling", "disp": "desconhecido", "status": "desaparecido", "faction": "Templo das Marés", "location": "Desconhecido", "firstSeen": "1", "desc": "Sacerdotisa que cuidava dos feridos no templo. Sumiu sem deixar rastro.", "tags": ["mistério"], "entries": [{"id": "e6", "text": "Desapareceu na noite da erupção. Deixou para trás um livro com páginas arrancadas.", "session": 1, "at": "2026-08-29T23:50:00.000Z"}]}], "sessions": [{"id": "ex-s1", "num": 1, "title": "A noite da erupção", "date": "2026-08-29", "worldDate": "3º dia da Lua de Cinzas", "summary": "O grupo se conheceu em Porto Cinzento quando o Monte Vael entrou em erupção. Abrigaram-se no farol de Mirelle.", "log": [{"id": "l1", "text": "Grupo chega ao porto no último barco antes da tempestade.", "at": "2026-08-29T21:05:00.000Z"}, {"id": "l2", "text": "Lyra salva uma criança do desabamento do mercado.", "at": "2026-08-29T21:30:00.000Z"}, {"id": "l3", "text": "Irmã Oona desaparece do templo.", "at": "2026-08-29T23:50:00.000Z"}]}, {"id": "ex-s2", "num": 2, "title": "O segredo do farol", "date": "2026-09-05", "worldDate": "5º dia da Lua de Cinzas", "summary": "Mirelle mostrou o mapa das rotas submersas. O grupo percebeu que está sendo seguido.", "log": [{"id": "l4", "text": "Encontram o mapa atrás da lente do farol.", "at": "2026-09-05T22:00:00.000Z"}, {"id": "l5", "text": "Emboscada de mercenários na estrada. Nix foi derrubado duas vezes.", "at": "2026-09-05T23:20:00.000Z"}]}, {"id": "ex-s3", "num": 3, "title": "Negócios nas Docas Baixas", "date": "2026-09-19", "worldDate": "9º dia da Lua de Cinzas", "summary": "Compraram a chave da cripta com Kesh e foram recebidos pelo Barão Thorne em um jantar tenso.", "log": [{"id": "l6", "text": "Kesh vende a chave. Nix negocia o preço de 60 para 40 po.", "at": "2026-09-19T21:15:00.000Z"}, {"id": "l7", "text": "Jantar na Fortaleza de Obsidiana. Anel com a chama invertida.", "at": "2026-09-19T22:30:00.000Z"}]}], "notes": [{"id": "ex-n1", "cat": "Missão", "title": "Encontrar a Irmã Oona", "body": "Pistas: livro com páginas arrancadas, marcas de queimadura na porta do templo. Mirelle acha que ela foi levada para as ilhas do norte.", "status": "aberta", "pinned": true}, {"id": "ex-n2", "cat": "Local", "title": "Porto Cinzento", "body": "Cidade portuária ao pé do Monte Vael. Bairros: Docas Baixas, Mercado de Pedra, Colina do Farol.", "status": "", "pinned": false}, {"id": "ex-n3", "cat": "Item", "title": "Chave da cripta", "body": "Chave de ferro negro com uma chama gravada. Abre a cripta sob o templo, segundo Kesh.", "status": "", "pinned": false}, {"id": "ex-n4", "cat": "Lore", "title": "A Chama Invertida", "body": "Símbolo de um culto que teria sido extinto há 200 anos. Adora o fogo que queima para baixo, rumo ao coração do vulcão.", "status": "", "pinned": false}]};
+
+/* ---------- utilidades ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const nowIso = () => new Date().toISOString();
+const fmtDate = d => { if (!d) return ''; const x = new Date(d.length === 10 ? d + 'T12:00:00' : d); return isNaN(x) ? d : x.toLocaleDateString('pt-BR'); };
+const fmtTime = d => { const x = new Date(d); return isNaN(x) ? '' : x.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); };
+const clone = o => JSON.parse(JSON.stringify(o));
+const strip = o => { const c = clone(o); delete c.id; return c; };
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } };
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const uniq = a => [...new Set(a.filter(Boolean))].sort((x, y) => x.localeCompare(y, 'pt-BR'));
+const yearLabel = y => /^\s*-?\d+\s*$/.test(String(y)) ? 'Ano ' + String(y).trim() : String(y);
+const byName = (a, b) => String(a.name || a.title || '').localeCompare(String(b.name || b.title || ''), 'pt-BR');
+
+const D20 = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M16 2 29 9.5v13L16 30 3 22.5v-13z"/><path d="M16 2 9 12h14zM9 12 3 22.5M23 12l6 10.5M9 12l7 12 7-12M16 24v6M3 22.5 16 24l13-1.5"/></svg>';
+
+const DISP = {aliado:'Aliado', neutro:'Neutro', hostil:'Hostil', desconhecido:'Desconhecido'};
+const STATUS = {vivo:'Vivo', morto:'Morto', desaparecido:'Desaparecido', desconhecido:'Desconhecido'};
+const KINDS = ['NPC', 'Personagem jogador', 'Divindade', 'Criatura', 'Facção', 'Outro'];
+const NOTE_CATS = ['Missão', 'Local', 'Item', 'Facção', 'Lore', 'Regra', 'Outro'];
+const LORE_CATS = ['História', 'Divindades', 'Facções', 'Povos e raças', 'Idiomas', 'Magia', 'Criaturas', 'Calendário', 'Outro'];
+const SYSTEMS = ['D&D 5e', 'D&D 2024', 'Dungeon World', 'Pathfinder 2e', 'Tormenta20', 'Old Dragon', 'Call of Cthulhu', 'Vampiro: A Máscara', 'Sistema próprio'];
+/* tipo de localidade -> classe do marcador no mapa */
+const PLACE_TYPES = [
+  ['Capital', 'capital'], ['Cidade', 'cidade'], ['Vila', 'vila'], ['Vilarejo', 'vilarejo'], ['Porto', 'cidade'],
+  ['Castelo', 'forte'], ['Fortaleza', 'forte'], ['Torre', 'forte'], ['Templo', 'templo'], ['Santuário', 'templo'],
+  ['Ruína', 'ruina'], ['Masmorra', 'ruina'], ['Caverna', 'ruina'],
+  ['Floresta', 'natureza'], ['Montanha', 'natureza'], ['Rio ou lago', 'natureza'], ['Pântano', 'natureza'], ['Ponte', 'natureza'],
+  ['Região', 'regiao'], ['Reino', 'regiao'], ['Outro', 'vila']
+];
+const TYPE_CLASS = Object.fromEntries(PLACE_TYPES);
+const TYPE_ORDER = Object.fromEntries(PLACE_TYPES.map(([t], i) => [t, i]));
+const pinClass = t => 't-' + (TYPE_CLASS[t] || 'vila');
+/* nível de detalhe: 1 sempre visível … 4 só bem de perto */
+const TYPE_TIER = {Capital: 1, Reino: 1, 'Região': 1, Cidade: 2, Porto: 2, Castelo: 2, Fortaleza: 2,
+  Vila: 3, Templo: 3, 'Santuário': 3, Torre: 3, Floresta: 3, Montanha: 3, 'Rio ou lago': 3, 'Pântano': 3,
+  Vilarejo: 4, 'Ruína': 4, Masmorra: 4, Caverna: 4, Ponte: 4, Outro: 4};
+const tierOf = p => +p.mapTier || TYPE_TIER[p.type] || 3;
+/* zoom relativo (100% = mapa inteiro) a partir do qual aparecem o ícone e o nome */
+const TIER_ZOOM = {1: [0, 0], 2: [0, 0.95], 3: [1.5, 2], 4: [2.4, 3.2]};
+
+/* ---------- armazenamento ---------- */
+function localStore() {
+  const KEY = 'grimorio-dados-v1';
+  let data = {}; try { data = JSON.parse(lsGet(KEY) || '{}'); } catch { data = {}; }
+  const L = {};
+  const arr = p => Object.entries(data[p] || {}).map(([id, d]) => ({id, ...d}));
+  const persist = () => lsSet(KEY, JSON.stringify(data));
+  const emit = p => (L[p] || []).forEach(cb => cb(arr(p), {}));
+  return {
+    mode: 'local',
+    listen(p, cb) { (L[p] = L[p] || []).push(cb); setTimeout(() => cb(arr(p), {})); return () => { L[p] = (L[p] || []).filter(x => x !== cb); }; },
+    async list(p) { return arr(p); },
+    async put(p, id, d) { (data[p] = data[p] || {})[id] = clone(d); if (!persist()) throw {code: 'quota_exceeded'}; emit(p); },
+    async del(p, id) { if (data[p]) { delete data[p][id]; persist(); emit(p); } }
+  };
+}
+function dbStore(db) {
+  return {
+    mode: 'db',
+    listen(p, cb, err) { return db.collection(p).onSnapshot(s => cb(s.docs.map(d => ({id: d.id, ...d.data()})), s.metadata), e => err && err(e)); },
+    async list(p) { const s = await db.collection(p).get(); return s.docs.map(d => ({id: d.id, ...d.data()})); },
+    put: (p, id, d) => db.collection(p).doc(id).set(d),
+    del: (p, id) => db.collection(p).doc(id).delete()
+  };
+}
+let store = null;
+
+/* ---------- estado ---------- */
+const st = {
+  ready: false, screen: 'picker',
+  worlds: [], campaigns: [], cid: null, wid: null, subs: [], wsubs: [],
+  npcs: [], sessions: [], notes: [], pnotes: [], places: [], lore: [], loaded: {},
+  tab: 'npcs', wtab: 'mapa',
+  sel: {npcs: null, sessions: null, notes: null, places: null, lore: null},
+  q: {npcs: '', sessions: '', notes: '', places: '', lore: ''},
+  fDisp: '', fStatus: '', fCat: '', fType: '', fLore: '', npcSort: 'nome',
+  placing: null, view: {}, labels: lsGet('grimorio-rotulos') !== '0', lod: lsGet('grimorio-lod') !== '0', mapDims: {},
+  confirm: null,
+  dice: {open: false, expr: '1d20', last: null, err: '', hist: []}
+};
+try { st.dice.hist = JSON.parse(lsGet('grimorio-dados-hist') || '[]').slice(0, 20); } catch {}
+
+const sub = k => `campaigns/${st.cid}/${k}`;
+const wsub = k => `worlds/${st.wid}/${k}`;
+const curCamp = () => st.campaigns.find(c => c.id === st.cid);
+const curWorld = () => st.worlds.find(w => w.id === st.wid);
+const worldOf = c => (c && st.worlds.find(w => w.id === c.worldId)) || st.worlds.find(w => w.id === 'ethru') || st.worlds[0];
+const inCampaign = () => st.screen === 'campaign';
+
+async function save(path, id, data) {
+  try { await store.put(path, id, data); return true; }
+  catch (e) { failMsg(e); return false; }
+}
+async function remove(path, id) {
+  try { await store.del(path, id); return true; }
+  catch (e) { failMsg(e); return false; }
+}
+function failMsg(e) {
+  const c = e && e.code;
+  if (c === 'invalid_argument' || c === 'not_granted') toast('Você só tem acesso de leitura a este grimório.');
+  else if (c === 'quota_exceeded') toast('O espaço de armazenamento acabou. Exclua registros antigos para continuar.');
+  else toast('Não foi possível salvar. Verifique a conexão e tente de novo.');
+}
+let toastT;
+function toast(msg) {
+  const t = $('#toast'); t.innerHTML = `<div class="toast" role="status">${esc(msg)}</div>`;
+  clearTimeout(toastT); toastT = setTimeout(() => t.innerHTML = '', 3400);
+}
+
+/* ---------- navegação e assinaturas ---------- */
+function resetSel() {
+  st.sel = {npcs: null, sessions: null, notes: null, places: null, lore: null};
+  st.q = {npcs: '', sessions: '', notes: '', places: '', lore: ''};
+  st.fDisp = st.fStatus = st.fCat = st.fType = st.fLore = ''; st.confirm = null; st.placing = null;
+}
+function subWorld(wid) {
+  if (st.wid === wid && st.wsubs.length) return;
+  st.wsubs.forEach(u => u()); st.wsubs = [];
+  st.wid = wid; st.places = []; st.lore = []; st.loaded.places = st.loaded.lore = false;
+  if (!wid) return;
+  for (const k of ['places', 'lore'])
+    st.wsubs.push(store.listen(`worlds/${wid}/${k}`, docs => { if (st.wid !== wid) return; st[k] = docs; st.loaded[k] = true; render(); }, () => {}));
+}
+function goPicker() {
+  st.subs.forEach(u => u()); st.subs = []; st.cid = null;
+  st.screen = 'picker'; resetSel(); window.scrollTo(0, 0); render();
+}
+function openWorld(wid) {
+  st.subs.forEach(u => u()); st.subs = []; st.cid = null;
+  st.screen = 'world'; resetSel(); st.wtab = 'mapa';
+  subWorld(wid); window.scrollTo(0, 0); render();
+}
+function openCampaign(cid) {
+  st.subs.forEach(u => u()); st.subs = [];
+  st.cid = cid; st.screen = 'campaign'; st.tab = 'npcs'; st.wtab = 'mapa';
+  st.npcs = []; st.sessions = []; st.notes = []; st.pnotes = [];
+  for (const k of ['npcs', 'sessions', 'notes', 'pnotes']) st.loaded[k] = false;
+  resetSel();
+  lsSet('grimorio-ultima', cid);
+  for (const [k, path] of [['npcs', 'npcs'], ['sessions', 'sessions'], ['notes', 'notes'], ['pnotes', 'placeNotes']])
+    st.subs.push(store.listen(sub(path), docs => { if (st.cid !== cid) return; st[k] = docs; st.loaded[k] = true; render(); }, () => {}));
+  subWorld(worldOf(curCamp())?.id || null);
+  window.scrollTo(0, 0); render();
+}
+
+async function deleteCampaign(id) {
+  for (const k of ['npcs', 'sessions', 'notes', 'placeNotes']) {
+    const p = `campaigns/${id}/${k}`;
+    try { for (const d of await store.list(p)) await store.del(p, d.id); } catch (e) { failMsg(e); return; }
+  }
+  if (await remove('campaigns', id)) { if (st.cid === id) goPicker(); toast('Campanha excluída.'); }
+}
+async function deleteWorld(id) {
+  const users = st.campaigns.filter(c => worldOf(c)?.id === id);
+  if (users.length) return toast(`Este mundo é usado por ${users.length} campanha(s). Troque o mundo delas ou exclua-as antes.`);
+  for (const k of ['places', 'lore']) {
+    const p = `worlds/${id}/${k}`;
+    try { for (const d of await store.list(p)) await store.del(p, d.id); } catch (e) { failMsg(e); return; }
+  }
+  const w = st.worlds.find(x => x.id === id);
+  if (await remove('worlds', id)) {
+    if (w?.mapAsset) { try { const a = await window.claude.use('assets'); await a?.delete(w.mapAsset); } catch {} }
+    if (store.mode === 'local') { try { localStorage.removeItem('grimorio-mapa-' + id); } catch {} }
+    if (st.wid === id) { subWorld(null); goPicker(); }
+    toast('Mundo excluído.');
+  }
+}
+
+async function createSample() {
+  if (!SAMPLE) return;
+  const cid = uid();
+  if (!await save('campaigns', cid, {...SAMPLE.campaign, worldId: worldOf(null)?.id || 'ethru', createdAt: nowIso()})) return;
+  for (const k of ['npcs', 'sessions', 'notes'])
+    for (const d of SAMPLE[k]) await store.put(`campaigns/${cid}/${k}`, d.id, {...strip(d), createdAt: nowIso(), updatedAt: d.entries?.at(-1)?.at || nowIso()});
+  toast('Campanha de exemplo criada.');
+}
+
+/* ---------- formulários (modal) ---------- */
+let modalState = null;
+function openForm(cfg) { modalState = cfg; renderModal(); setTimeout(() => $('#modal input, #modal textarea, #modal select')?.focus(), 30); }
+function closeForm() { modalState = null; $('#modal').innerHTML = ''; }
+function fieldHtml(f) {
+  const id = 'f-' + f.id, v = f.value ?? '';
+  let ctl;
+  if (f.type === 'textarea') ctl = `<textarea id="${id}" placeholder="${esc(f.ph || '')}">${esc(v)}</textarea>`;
+  else if (f.type === 'select') ctl = `<select id="${id}">${f.options.map(([val, lab]) => `<option value="${esc(val)}"${String(val) === String(v) ? ' selected' : ''}>${esc(lab)}</option>`).join('')}</select>`;
+  else ctl = `<input id="${id}" type="${f.type || 'text'}" value="${esc(v)}" placeholder="${esc(f.ph || '')}"${f.list ? ` list="${id}-l"` : ''}${f.required ? ' required' : ''}>` +
+    (f.list ? `<datalist id="${id}-l">${f.list.map(o => `<option value="${esc(o)}"></option>`).join('')}</datalist>` : '');
+  return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)}</label>${ctl}</div>`;
+}
+function renderModal() {
+  const m = modalState; if (!m) return;
+  $('#modal').innerHTML = `<div class="modal-bg" data-act="modal-bg"><form class="modal" data-form="modal" role="dialog" aria-modal="true" aria-label="${esc(m.title)}">
+    <h2>${esc(m.title)}</h2>${m.intro ? `<p class="world-note">${esc(m.intro)}</p>` : ''}<div class="form">${m.fields.map(fieldHtml).join('')}</div>
+    <div class="modal-foot"><button type="button" class="btn ghost" data-act="modal-close">Cancelar</button><button class="btn primary">${esc(m.submit || 'Salvar')}</button></div>
+  </form></div>`;
+}
+function readForm() { const o = {}; for (const f of modalState.fields) o[f.id] = ($('#f-' + f.id)?.value ?? '').trim(); return o; }
+
+function worldForm(w) {
+  openForm({
+    title: w ? 'Editar mundo' : 'Novo mundo', submit: w ? 'Salvar' : 'Criar mundo',
+    fields: [
+      {id: 'name', label: 'Nome do mundo', value: w?.name, required: true, full: true},
+      {id: 'desc', label: 'Apresentação do mundo', type: 'textarea', value: w?.desc, full: true, ph: 'Tom, era, o que torna este mundo único'}
+    ],
+    onSubmit: async v => {
+      if (!v.name) { toast('Dê um nome ao mundo.'); return false; }
+      const id = w?.id || uid();
+      return save('worlds', id, {...(w ? strip(w) : {createdAt: nowIso()}), ...v, updatedAt: nowIso()});
+    }
+  });
+}
+
+function campaignForm(c) {
+  const worlds = [...st.worlds].sort(byName);
+  openForm({
+    title: c ? 'Editar campanha' : 'Nova campanha', submit: c ? 'Salvar' : 'Criar campanha',
+    fields: [
+      {id: 'name', label: 'Nome da campanha', value: c?.name, required: true, full: true, ph: 'Ex.: A Queda de Valdris'},
+      {id: 'worldId', label: 'Mundo', type: 'select', value: worldOf(c)?.id, options: worlds.map(w => [w.id, w.name])},
+      {id: 'system', label: 'Sistema de jogo', value: c?.system ?? 'D&D 5e', list: SYSTEMS},
+      {id: 'role', label: 'Meu papel', type: 'select', value: c?.role ?? 'Mestre', options: [['Mestre', 'Mestre'], ['Jogador', 'Jogador']]},
+      {id: 'year', label: `Ano na história de ${worldOf(c)?.name || 'mundo'}`, value: c?.year, ph: 'Ex.: 1247 ou Ano 312 da Era das Cinzas'},
+      {id: 'region', label: 'Onde começa', value: c?.region, ph: 'Região ou cidade de partida', list: st.wid === worldOf(c)?.id ? uniq(st.places.map(p => p.name)) : []},
+      {id: 'players', label: 'Jogadores e personagens', value: c?.players, full: true, ph: 'Ana (Lyra), Bruno (Thorek)…'},
+      {id: 'desc', label: 'Premissa', type: 'textarea', value: c?.desc, full: true, ph: 'Do que se trata a campanha'}
+    ],
+    onSubmit: async v => {
+      if (!v.name) { toast('Dê um nome à campanha.'); return false; }
+      const id = c?.id || uid();
+      const base = c ? strip(c) : {createdAt: nowIso()}; delete base.world;
+      const ok = await save('campaigns', id, {...base, ...v, updatedAt: nowIso()});
+      if (ok && !c) openCampaign(id);
+      else if (ok && st.cid === id) subWorld(v.worldId);
+      return ok;
+    }
+  });
+}
+
+function npcForm(n) {
+  const sessOpts = sessionsSorted().map(s => String(s.num));
+  openForm({
+    title: n ? 'Editar personalidade' : 'Nova personalidade', submit: n ? 'Salvar' : 'Adicionar',
+    fields: [
+      {id: 'name', label: 'Nome', value: n?.name, required: true, ph: 'Ex.: Mirelle Voss'},
+      {id: 'epithet', label: 'Título ou apelido', value: n?.epithet, ph: 'Ex.: A Guardiã do Farol'},
+      {id: 'kind', label: 'Tipo', type: 'select', value: n?.kind ?? 'NPC', options: KINDS.map(k => [k, k])},
+      {id: 'ancestry', label: 'Raça / ancestralidade', value: n?.ancestry, list: ['Humano', 'Elfo', 'Anão', 'Halfling', 'Gnomo', 'Meio-orc', 'Tiefling', 'Draconato', 'Goblin', 'Dragão']},
+      {id: 'disp', label: 'Relação com o grupo', type: 'select', value: n?.disp ?? 'desconhecido', options: Object.entries(DISP)},
+      {id: 'status', label: 'Estado', type: 'select', value: n?.status ?? 'vivo', options: Object.entries(STATUS)},
+      {id: 'faction', label: 'Facção / afiliação', value: n?.faction, list: uniq(st.npcs.map(x => x.faction))},
+      {id: 'location', label: `Onde pode ser encontrado (localidades de ${curWorld()?.name || 'mundo'})`, value: n?.location, list: uniq([...st.places.map(p => p.name), ...st.npcs.map(x => x.location)])},
+      {id: 'firstSeen', label: 'Primeira aparição (sessão nº)', value: n?.firstSeen ?? (sessOpts[0] || ''), list: sessOpts},
+      {id: 'tags', label: 'Marcadores (separe por vírgula)', value: (n?.tags || []).join(', '), ph: 'informante, nobreza'},
+      {id: 'desc', label: 'Descrição, aparência, personalidade', type: 'textarea', value: n?.desc, full: true}
+    ],
+    onSubmit: async v => {
+      if (!v.name) { toast('A personalidade precisa de um nome.'); return false; }
+      const id = n?.id || uid();
+      const tags = v.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const place = placeByName(v.location);
+      const ok = await save(sub('npcs'), id, {...(n ? strip(n) : {entries: [], createdAt: nowIso()}), ...v, placeId: place?.id || '', tags, updatedAt: nowIso()});
+      if (ok) { st.sel.npcs = id; st.tab = 'npcs'; }
+      return ok;
+    }
+  });
+}
+
+function sessionForm(s) {
+  const next = (Math.max(0, ...st.sessions.map(x => +x.num || 0)) + 1);
+  openForm({
+    title: s ? 'Editar sessão' : 'Nova sessão', submit: s ? 'Salvar' : 'Começar sessão',
+    fields: [
+      {id: 'num', label: 'Número', type: 'number', value: s?.num ?? next},
+      {id: 'date', label: 'Data real', type: 'date', value: s?.date ?? new Date().toLocaleDateString('en-CA')},
+      {id: 'title', label: 'Título', value: s?.title, full: true, ph: 'Ex.: O segredo do farol'},
+      {id: 'worldDate', label: `Data em ${curWorld()?.name || 'jogo'}`, value: s?.worldDate ?? (curCamp()?.year ? yearLabel(curCamp().year) : ''), full: true, ph: 'Ex.: 5º dia da Lua de Cinzas'},
+      {id: 'summary', label: 'Resumo', type: 'textarea', value: s?.summary, full: true, ph: 'Pode preencher depois da sessão'}
+    ],
+    onSubmit: async v => {
+      const id = s?.id || uid();
+      const ok = await save(sub('sessions'), id, {...(s ? strip(s) : {log: [], createdAt: nowIso()}), ...v, num: +v.num || next, updatedAt: nowIso()});
+      if (ok) { st.sel.sessions = id; st.tab = 'sessions'; }
+      return ok;
+    }
+  });
+}
+
+function noteForm(n) {
+  openForm({
+    title: n ? 'Editar anotação' : 'Nova anotação', submit: n ? 'Salvar' : 'Adicionar',
+    fields: [
+      {id: 'title', label: 'Título', value: n?.title, required: true, full: true},
+      {id: 'cat', label: 'Categoria', type: 'select', value: n?.cat ?? (st.fCat || 'Missão'), options: NOTE_CATS.map(c => [c, c])},
+      {id: 'status', label: 'Situação (para missões)', type: 'select', value: n?.status ?? 'aberta', options: [['aberta', 'Em aberto'], ['concluída', 'Concluída'], ['falhou', 'Falhou'], ['', '—']]},
+      {id: 'body', label: 'Texto', type: 'textarea', value: n?.body, full: true}
+    ],
+    onSubmit: async v => {
+      if (!v.title) { toast('Dê um título à anotação.'); return false; }
+      const id = n?.id || uid();
+      const ok = await save(sub('notes'), id, {...(n ? strip(n) : {pinned: false, createdAt: nowIso()}), ...v, updatedAt: nowIso()});
+      if (ok) { st.sel.notes = id; st.tab = 'notes'; }
+      return ok;
+    }
+  });
+}
+
+function placeForm(p, pos) {
+  const others = [...st.places].filter(x => x.id !== p?.id).sort(byName);
+  openForm({
+    title: p ? 'Editar localidade' : `Nova localidade em ${curWorld()?.name || 'mundo'}`, submit: p ? 'Salvar' : 'Adicionar',
+    intro: 'Localidades pertencem ao mundo e aparecem em todas as campanhas que se passam nele.',
+    fields: [
+      {id: 'name', label: 'Nome', value: p?.name, required: true, ph: 'Ex.: Pedraponte'},
+      {id: 'type', label: 'Tipo', type: 'select', value: p?.type ?? 'Cidade', options: PLACE_TYPES.map(([t]) => [t, t])},
+      {id: 'parent', label: 'Fica dentro de', type: 'select', value: p?.parent ?? '', options: [['', '—'], ...others.map(o => [o.id, `${o.name} (${o.type})`])]},
+      {id: 'region', label: 'Região', value: p?.region, list: uniq([...st.places.map(x => x.region), ...st.places.filter(x => ['Região', 'Reino'].includes(x.type)).map(x => x.name)])},
+      {id: 'ruler', label: 'Governante / responsável', value: p?.ruler},
+      {id: 'population', label: 'População', value: p?.population, ph: 'Ex.: ~300 pescadores'},
+      {id: 'mapTier', label: 'Destaque no mapa', type: 'select', value: p?.mapTier ?? '', options: [['', 'Automático (pelo tipo)'], ['1', 'Sempre visível'], ['2', 'Importante (visível de longe)'], ['3', 'Comum (aparece ao aproximar)'], ['4', 'Menor (só bem de perto)']]},
+      {id: 'tags', label: 'Marcadores (separe por vírgula)', value: (p?.tags || []).join(', '), ph: 'rio, ponte de pedra, comércio'},
+      {id: 'desc', label: 'Descrição', type: 'textarea', value: p?.desc, full: true, ph: 'Como é o lugar, quem vive ali, o que o torna importante'}
+    ],
+    onSubmit: async v => {
+      if (!v.name) { toast('A localidade precisa de um nome.'); return false; }
+      const id = p?.id || uid();
+      const tags = v.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const base = p ? strip(p) : {entries: [], x: pos?.x ?? null, y: pos?.y ?? null, createdAt: nowIso()};
+      const ok = await save(wsub('places'), id, {...base, ...v, tags, updatedAt: nowIso()});
+      if (ok) st.sel.places = id;
+      return ok;
+    }
+  });
+}
+
+function loreForm(n) {
+  openForm({
+    title: n ? 'Editar lore' : `Novo registro de lore de ${curWorld()?.name || 'mundo'}`, submit: n ? 'Salvar' : 'Adicionar',
+    intro: 'O lore pertence ao mundo e fica disponível em todas as campanhas que se passam nele.',
+    fields: [
+      {id: 'title', label: 'Título', value: n?.title, required: true, full: true},
+      {id: 'cat', label: 'Categoria', type: 'select', value: n?.cat ?? (st.fLore || 'História'), options: LORE_CATS.map(c => [c, c])},
+      {id: 'body', label: 'Texto', type: 'textarea', value: n?.body, full: true}
+    ],
+    onSubmit: async v => {
+      if (!v.title) { toast('Dê um título.'); return false; }
+      const id = n?.id || uid();
+      const ok = await save(wsub('lore'), id, {...(n ? strip(n) : {createdAt: nowIso()}), ...v, updatedAt: nowIso()});
+      if (ok) st.sel.lore = id;
+      return ok;
+    }
+  });
+}
+
+/* ---------- consultas ---------- */
+const sessionsSorted = () => [...st.sessions].sort((a, b) => (+b.num || 0) - (+a.num || 0));
+const placeByName = name => { const k = norm(name); return k ? st.places.find(p => norm(p.name) === k) : null; };
+const placeOfNpc = n => st.places.find(p => p.id === n.placeId) || placeByName(n.location);
+function npcsFiltered() {
+  const q = norm(st.q.npcs);
+  const l = st.npcs.filter(n => (!st.fDisp || n.disp === st.fDisp) && (!st.fStatus || n.status === st.fStatus) &&
+    (!q || norm([n.name, n.epithet, n.faction, n.location, n.ancestry, n.desc, (n.tags || []).join(' '), (n.entries || []).map(e => e.text).join(' ')].join(' ')).includes(q)));
+  return l.sort(st.npcSort === 'recente' ? (a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')) : byName);
+}
+function placesFiltered() {
+  const q = norm(st.q.places);
+  return st.places.filter(p => (!st.fType || p.type === st.fType) &&
+    (!q || norm([p.name, p.type, p.region, p.ruler, p.desc, (p.tags || []).join(' '), (p.entries || []).map(e => e.text).join(' ')].join(' ')).includes(q)))
+    .sort((a, b) => (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99) || byName(a, b));
+}
+function mapSrc(w) {
+  if (!w) return null;
+  if (store?.mode === 'db') return w.mapAsset ? '/_blob/' + w.mapAsset : null;
+  return lsGet('grimorio-mapa-' + w.id);
+}
+
+/* ---------- renderização ---------- */
+function swap(el, html) {
+  const keep = {}, scroll = {};
+  el.querySelectorAll('[data-keep]').forEach(i => keep[i.id] = i.value);
+  el.querySelectorAll('[data-scroll]').forEach(i => scroll[i.id] = [i.scrollLeft, i.scrollTop]);
+  const a = document.activeElement; let fid = null, sel;
+  if (a && a.id && el.contains(a)) { fid = a.id; try { sel = [a.selectionStart, a.selectionEnd]; } catch {} }
+  el.innerHTML = html;
+  for (const id in keep) { const i = document.getElementById(id); if (i && el.contains(i)) i.value = keep[id]; }
+  for (const id in scroll) { const i = document.getElementById(id); if (i) { i.scrollLeft = scroll[id][0]; i.scrollTop = scroll[id][1]; } }
+  if (fid) { const f = document.getElementById(fid); if (f) { f.focus({preventScroll: true}); try { sel && f.setSelectionRange(...sel); } catch {} } }
+}
+
+function tabsHtml(defs, cur, act = 'tab') {
+  return `<nav class="tabs" role="tablist">${defs.map(([k, l, n]) =>
+    `<button class="tab" role="tab" aria-selected="${cur === k}" data-act="${act}" data-tab="${k}">${l}${n != null ? `<small>${n}</small>` : ''}</button>`).join('')}</nav>`;
+}
+
+function render() { renderMain(); initMapView(); }
+function renderMain() {
+  renderBar();
+  const main = $('#main');
+  if (!st.ready) return swap(main, '<div class="empty">Abrindo o grimório…</div>');
+  if (st.screen === 'world' && curWorld()) {
+    const w = curWorld();
+    return swap(main, tabsHtml([['mapa', 'Mapa'], ['locais', 'Localidades', st.places.length], ['lore', 'Lore', st.lore.length]], st.wtab, 'wtab') +
+      `<p class="world-note">Tudo aqui pertence a ${esc(w.name)} e aparece em todas as campanhas que se passam neste mundo.</p>` + worldBody());
+  }
+  if (st.screen === 'campaign' && curCamp()) {
+    const w = curWorld();
+    const tabs = tabsHtml([['npcs', 'Personalidades', st.npcs.length], ['sessions', 'Sessões', st.sessions.length], ['notes', 'Anotações', st.notes.length], ['world', w ? esc(w.name) : 'Mundo', null]], st.tab);
+    let view;
+    if (st.tab === 'world') {
+      view = !w ? '<div class="detail-empty">Esta campanha não tem um mundo. Use <b>Editar</b> na tela de campanhas para escolher um.</div>'
+        : `<div class="subtabs">${[['mapa', 'Mapa'], ['locais', `Localidades (${st.places.length})`], ['lore', `Lore (${st.lore.length})`]].map(([k, l]) =>
+            `<button class="chip" aria-pressed="${st.wtab === k}" data-act="wtab" data-tab="${k}">${l}</button>`).join('')}</div>` + worldBody();
+    } else view = {npcs: viewNpcs, sessions: viewSessions, notes: viewNotes}[st.tab]();
+    return swap(main, tabs + view);
+  }
+  swap(main, pickerHtml());
+}
+
+function renderBar() {
+  let ctx = '';
+  if (st.screen === 'campaign' && curCamp()) {
+    const c = curCamp();
+    ctx = `<button class="camp-switch" data-act="go-picker" title="Trocar de campanha"><b>${esc(c.name)}</b><span>${esc([c.system, curWorld()?.name, c.year && yearLabel(c.year)].filter(Boolean).join(' · '))} · trocar ▾</span></button>`;
+  } else if (st.screen === 'world' && curWorld()) {
+    ctx = `<button class="camp-switch" data-act="go-picker" title="Voltar"><span>Mundo</span><b>${esc(curWorld().name)}</b><span>· voltar ▾</span></button>`;
+  }
+  const mode = !store ? '' : store.mode === 'db'
+    ? '<span class="mode" title="Os dados ficam salvos na sua conta e aparecem em qualquer dispositivo"><i></i>Salvo na nuvem</span>'
+    : '<span class="mode local" title="Os dados ficam só neste navegador. Use Exportar para fazer backup."><i></i>Salvo neste navegador</span>';
+  swap($('#bar'), `<div class="brand">${D20}<span>Grimório</span></div>${ctx}
+    <div class="bar-actions">${mode}
+      ${store ? `<button class="btn small ghost" data-act="export" title="Baixar backup em JSON">⭳<span> Exportar</span></button><button class="btn small ghost" data-act="import" title="Importar backup JSON">⭱<span> Importar</span></button>` : ''}
+    </div>`);
+}
+
+function confirmBtn(key, label = 'Excluir', cls = 'btn small ghost danger') {
+  const on = st.confirm === key;
+  return `<button type="button" class="${cls}${on ? ' armed' : ''}" data-act="del" data-key="${esc(key)}">${on ? (cls === 'x' ? 'Excluir?' : 'Confirmar exclusão') : label}</button>`;
+}
+
+function pickerHtml() {
+  const last = lsGet('grimorio-ultima');
+  const cs = [...st.campaigns].sort((a, b) => (a.id === last ? -1 : b.id === last ? 1 : byName(a, b)));
+  const worlds = [...st.worlds].sort((a, b) => (a.id === 'ethru' ? -1 : b.id === 'ethru' ? 1 : byName(a, b)));
+  return `<section class="picker">
+    <div class="picker-sec">
+    <h1>Qual campanha vamos jogar hoje?</h1>
+    <p class="lead">Cada campanha guarda as próprias personalidades, sessões e anotações. Nada do que você registra em uma aparece nas outras. O mundo é compartilhado.</p>
+    <div class="camp-grid">
+      ${cs.map(c => `<article class="camp${c.id === last ? ' last' : ''}">
+        ${c.id === last ? '<span class="eyebrow" style="color:var(--accent)">Última aberta</span>' : c.example ? '<span class="eyebrow">Exemplo</span>' : `<span class="eyebrow">${esc(c.role || 'Mestre')}</span>`}
+        <h2>${esc(c.name)}</h2>
+        <p class="sys">${esc([c.system, c.role, worldOf(c)?.name && 'em ' + worldOf(c).name].filter(Boolean).join(' · '))}</p>
+        ${c.year ? `<p class="year">${esc(yearLabel(c.year))}</p>` : ''}
+        ${c.region || c.desc ? `<p class="world">${esc(c.region ? 'Começa em ' + c.region : c.desc)}</p>` : ''}
+        <div class="row"><button class="btn primary" data-act="pick-camp" data-id="${esc(c.id)}">Abrir</button>
+          <button class="btn small ghost" data-act="edit-camp" data-id="${esc(c.id)}">Editar</button>
+          ${confirmBtn('camp:' + c.id)}</div>
+      </article>`).join('')}
+      <button class="camp-new" data-act="new-camp">+ Nova campanha</button>
+    </div>
+    <div class="picker-foot">${SAMPLE && !st.campaigns.some(c => c.example) ? '<button class="btn small ghost" data-act="sample">Criar campanha de exemplo</button><span>para ver como funciona.</span>' : ''}</div>
+    </div>
+    <div class="picker-sec"><p class="eyebrow">${worlds.length > 1 ? 'Mundos' : 'Mundo'}</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+      ${worlds.map(w => {
+        const n = st.campaigns.filter(c => worldOf(c)?.id === w.id).length;
+        return `<article class="world-card"><div><h2>${esc(w.name)}</h2>
+          <p>${esc(w.desc || 'Localidades, mapa e lore compartilhados por todas as campanhas deste mundo.')}</p>
+          <p style="font-size:14px;margin-top:6px">${n === 1 ? '1 campanha' : n + ' campanhas'} neste mundo</p></div>
+          <div class="row"><button class="btn primary" data-act="open-world" data-id="${esc(w.id)}">Abrir mundo</button>
+          <button class="btn small ghost" data-act="edit-world" data-id="${esc(w.id)}">Editar</button>${worlds.length > 1 ? confirmBtn('world:' + w.id) : ''}</div></article>`;
+      }).join('')}
+      </div>
+      <div class="picker-foot" style="margin-top:10px"><button class="btn small ghost" data-act="new-world">+ Outro mundo</button></div>
+    </div>
+  </section>`;
+}
+
+function listHead(kind, ph, newAct, newLabel) {
+  return `<div class="toolbar"><input id="q-${kind}" type="search" placeholder="${ph}" value="${esc(st.q[kind])}" data-q="${kind}" aria-label="Buscar">
+    <button class="btn primary" data-act="${newAct}">${newLabel}</button></div>`;
+}
+function chip(key, val, lab) { return `<button class="chip" aria-pressed="${st[key] === val}" data-act="filter" data-key="${key}" data-val="${esc(val)}">${esc(lab)}</button>`; }
+
+/* --- personalidades --- */
+function viewNpcs() {
+  const list = npcsFiltered(), sel = st.npcs.find(n => n.id === st.sel.npcs);
+  const items = list.length ? list.map(n => `<li><button class="item${n.status === 'morto' ? ' dead' : ''}" data-act="sel" data-kind="npcs" data-id="${esc(n.id)}" aria-current="${n.id === st.sel.npcs}">
+      <span class="dot ${esc(n.disp)}" title="${esc(DISP[n.disp] || '')}"></span>
+      <span><b>${esc(n.name)}</b><span class="sub">${esc([n.epithet, n.faction, n.location].filter(Boolean).join(' · ') || n.kind || '')}</span></span>
+      <span class="meta">${n.status && n.status !== 'vivo' ? `<span class="pill${n.status === 'morto' ? ' warn' : ''}">${esc(STATUS[n.status])}</span>` : `${(n.entries || []).length} reg.`}</span>
+    </button></li>`).join('')
+    : `<li class="empty">${st.npcs.length ? 'Ninguém encontrado com esses filtros.' : (st.loaded.npcs ? 'Nenhuma personalidade ainda. Adicione a primeira quando o grupo conhecer alguém importante.' : 'Carregando…')}</li>`;
+  return `<div class="work${sel ? ' has-sel' : ''}">
+    <section class="pane list-pane">
+      ${listHead('npcs', 'Buscar nome, facção, local, registro…', 'new-npc', '+ Nova')}
+      <div class="chips">${chip('fDisp', '', 'Todos')}${Object.entries(DISP).map(([k, l]) => chip('fDisp', k, l)).join('')}</div>
+      <div class="chips">${chip('fStatus', '', 'Todos')}${Object.entries(STATUS).filter(([k]) => k !== 'desconhecido').map(([k, l]) => chip('fStatus', k, l)).join('')}
+        <select id="npc-sort" aria-label="Ordenar" class="chip" style="margin-left:auto"><option value="nome"${st.npcSort === 'nome' ? ' selected' : ''}>A–Z</option><option value="recente"${st.npcSort === 'recente' ? ' selected' : ''}>Recentes</option></select></div>
+      <ul class="items">${items}</ul>
+    </section>
+    <section class="pane detail-pane">${sel ? npcDetail(sel) : '<div class="detail-empty">Escolha uma personalidade para ver a ficha e os registros.</div>'}</section>
+  </div>`;
+}
+
+function sessionOptions(selNum) {
+  return `<option value="">Sem sessão</option>` + sessionsSorted().map(s => `<option value="${s.num}"${String(s.num) === String(selNum) ? ' selected' : ''}>Sessão ${s.num}${s.title ? ' · ' + esc(s.title) : ''}</option>`).join('');
+}
+
+function entriesHtml(list, keyPrefix, withSession = true) {
+  const entries = [...(list || [])].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  return entries.length ? `<ol class="timeline">${entries.map(e => `<li>
+      <div class="tl-meta">${withSession ? (e.session ? `<button class="link" data-act="goto-session" data-num="${esc(e.session)}">Sessão ${esc(e.session)}</button>` : '<span>Sem sessão</span>') : ''}<span>${fmtDate(e.at)}</span>${confirmBtn(keyPrefix + e.id, '×', 'x')}</div>
+      <p class="tl-text">${esc(e.text)}</p></li>`).join('')}</ol>` : '';
+}
+
+function npcDetail(n) {
+  const latest = sessionsSorted()[0];
+  const place = placeOfNpc(n);
+  const fact = (l, v) => v ? `<div><dt>${l}</dt><dd>${v}</dd></div>` : '';
+  const n_entries = (n.entries || []).length;
+  return `<button class="btn small ghost back" data-act="back">← Personalidades</button>
+  <article class="detail">
+    <div class="detail-head"><div>
+      <p class="eyebrow">${esc([n.kind, n.ancestry].filter(Boolean).join(' · '))}</p>
+      <h2>${esc(n.name)}</h2>${n.epithet ? `<p class="epithet">${esc(n.epithet)}</p>` : ''}</div>
+      <div class="actions"><button class="btn small" data-act="edit-npc">Editar</button>${confirmBtn('npc:' + n.id)}</div>
+    </div>
+    <dl class="facts">
+      ${fact('Relação', `<span class="disp ${esc(n.disp)}">${esc(DISP[n.disp] || '—')}</span>`)}
+      ${fact('Estado', `<span class="pill${n.status === 'morto' ? ' warn' : n.status === 'vivo' ? ' ok' : ' gold'}">${esc(STATUS[n.status] || '—')}</span>`)}
+      ${fact('Facção', esc(n.faction))}
+      ${fact('Local', place ? `<button class="link" data-act="goto-place" data-id="${esc(place.id)}">${esc(place.name)}</button>` : esc(n.location))}
+      ${fact('Primeira aparição', n.firstSeen ? 'Sessão ' + esc(n.firstSeen) : '')}
+    </dl>
+    ${n.desc ? `<p class="prose">${esc(n.desc)}</p>` : '<p class="prose" style="color:var(--muted)">Sem descrição ainda.</p>'}
+    ${(n.tags || []).length ? `<div class="tags">${n.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+    <div class="section-h"><h3>Registros</h3><small>${n_entries}</small></div>
+    <form class="adder" data-form="npc-entry">
+      <textarea id="entry-${esc(n.id)}" data-keep placeholder="O que aconteceu com ${esc(n.name)}? Ex.: revelou um segredo, mudou de lado, deu uma missão…"></textarea>
+      <div class="row"><span class="hint">Ctrl+Enter para registrar</span><select id="entry-s-${esc(n.id)}" data-keep aria-label="Sessão">${sessionOptions(latest?.num)}</select><button class="btn primary">Registrar</button></div>
+    </form>
+    ${entriesHtml(n.entries, 'entry:') || '<p class="empty" style="text-align:left;padding:0">Nenhum registro. Anote aqui tudo o que o grupo descobrir sobre esta personalidade.</p>'}
+  </article>`;
+}
+
+/* --- sessões --- */
+function viewSessions() {
+  const q = norm(st.q.sessions);
+  const list = sessionsSorted().filter(s => !q || norm([s.title, s.summary, (s.log || []).map(l => l.text).join(' ')].join(' ')).includes(q));
+  const sel = st.sessions.find(s => s.id === st.sel.sessions);
+  const items = list.length ? list.map(s => `<li><button class="item" data-act="sel" data-kind="sessions" data-id="${esc(s.id)}" aria-current="${s.id === st.sel.sessions}" style="grid-template-columns:auto minmax(0,1fr) auto">
+      <span class="num">#${esc(s.num)}</span><span><b>${esc(s.title || 'Sessão ' + s.num)}</b><span class="sub">${esc(s.worldDate || '')}</span></span><span class="meta">${fmtDate(s.date)}</span></button></li>`).join('')
+    : `<li class="empty">${st.sessions.length ? 'Nada encontrado.' : (st.loaded.sessions ? 'Nenhuma sessão registrada. Comece uma no início do jogo.' : 'Carregando…')}</li>`;
+  return `<div class="work${sel ? ' has-sel' : ''}">
+    <section class="pane list-pane">${listHead('sessions', 'Buscar nas sessões…', 'new-session', '+ Nova sessão')}<ul class="items">${items}</ul></section>
+    <section class="pane detail-pane">${sel ? sessionDetail(sel) : '<div class="detail-empty">Escolha uma sessão para ver o diário, ou comece uma nova.</div>'}</section>
+  </div>`;
+}
+
+function sessionDetail(s) {
+  const log = [...(s.log || [])].sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  const inS = e => String(e.session) === String(s.num);
+  const people = st.npcs.filter(n => (n.entries || []).some(inS) || String(n.firstSeen) === String(s.num));
+  const places = st.places.filter(p => st.pnotes.some(pn => pn.id === p.id && (pn.entries || []).some(inS)));
+  return `<button class="btn small ghost back" data-act="back">← Sessões</button>
+  <article class="detail">
+    <div class="detail-head"><div><p class="eyebrow">Sessão ${esc(s.num)} · ${fmtDate(s.date)}</p><h2>${esc(s.title || 'Sem título')}</h2>${s.worldDate ? `<p class="epithet">${esc(s.worldDate)}</p>` : ''}</div>
+      <div class="actions"><button class="btn small" data-act="edit-session">Editar</button>${confirmBtn('session:' + s.id)}</div></div>
+    <div class="section-h"><h3>Resumo</h3></div>
+    ${s.summary ? `<p class="prose">${esc(s.summary)}</p>` : '<p class="prose" style="color:var(--muted)">Sem resumo ainda. Use <b>Editar</b> para escrever ao fim da sessão.</p>'}
+    <div class="section-h"><h3>Diário ao vivo</h3><small>${log.length}</small></div>
+    <form class="adder" data-form="session-log">
+      <textarea id="log-${esc(s.id)}" data-keep placeholder="Registre o que acabou de acontecer…"></textarea>
+      <div class="row"><span class="hint">Enter registra · Shift+Enter quebra a linha</span><button class="btn primary">Registrar</button></div>
+    </form>
+    ${log.length ? `<ol class="timeline">${log.map(l => `<li><div class="tl-meta"><span>${fmtTime(l.at)}</span>${confirmBtn('log:' + l.id, '×', 'x')}</div><p class="tl-text">${esc(l.text)}</p></li>`).join('')}</ol>` : ''}
+    <div class="section-h"><h3>Personalidades nesta sessão</h3><small>${people.length}</small></div>
+    ${people.length ? `<div class="people">${people.map(n => `<button class="person" data-act="goto-npc" data-id="${esc(n.id)}"><span class="dot ${esc(n.disp)}"></span>${esc(n.name)}</button>`).join('')}</div>`
+      : '<p style="color:var(--muted)">Aparecem aqui as personalidades com registros marcados nesta sessão.</p>'}
+    ${places.length ? `<div class="section-h"><h3>Lugares visitados</h3><small>${places.length}</small></div>
+      <div class="people">${places.map(p => `<button class="person" data-act="goto-place" data-id="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>` : ''}
+  </article>`;
+}
+
+/* --- anotações da campanha --- */
+function viewNotes() {
+  const q = norm(st.q.notes);
+  const list = st.notes.filter(n => (!st.fCat || n.cat === st.fCat) && (!q || norm(n.title + ' ' + n.body).includes(q)))
+    .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(a.cat).localeCompare(String(b.cat)) || byName(a, b));
+  const sel = st.notes.find(n => n.id === st.sel.notes);
+  const cats = NOTE_CATS.filter(c => st.notes.some(n => n.cat === c));
+  const items = list.length ? list.map(n => `<li><button class="item" data-act="sel" data-kind="notes" data-id="${esc(n.id)}" aria-current="${n.id === st.sel.notes}" style="grid-template-columns:minmax(0,1fr) auto">
+      <span><b>${n.pinned ? '★ ' : ''}${esc(n.title)}</b><span class="sub">${esc(n.cat)}</span></span>
+      <span class="meta">${n.cat === 'Missão' && n.status ? `<span class="pill${n.status === 'concluída' ? ' ok' : n.status === 'falhou' ? ' warn' : ' gold'}">${esc(n.status)}</span>` : ''}</span></button></li>`).join('')
+    : `<li class="empty">${st.notes.length ? 'Nada encontrado.' : (st.loaded.notes ? 'Sem anotações. Guarde aqui missões, itens e segredos desta campanha.' : 'Carregando…')}</li>`;
+  return `<div class="work${sel ? ' has-sel' : ''}">
+    <section class="pane list-pane">${listHead('notes', 'Buscar anotações…', 'new-note', '+ Nova')}
+      <div class="chips">${chip('fCat', '', 'Todas')}${cats.map(c => chip('fCat', c, c)).join('')}</div>
+      <ul class="items">${items}</ul></section>
+    <section class="pane detail-pane">${sel ? noteDetail(sel) : '<div class="detail-empty">Escolha uma anotação.</div>'}</section>
+  </div>`;
+}
+
+function noteDetail(n) {
+  return `<button class="btn small ghost back" data-act="back">← Anotações</button>
+  <article class="detail">
+    <div class="detail-head"><div><p class="eyebrow">${esc(n.cat)}${n.cat === 'Missão' && n.status ? ' · ' + esc(n.status) : ''}</p><h2>${esc(n.title)}</h2></div>
+      <div class="actions"><button class="btn small ghost" data-act="toggle-pin">${n.pinned ? '★ Fixada' : '☆ Fixar'}</button>
+      ${n.cat === 'Missão' ? `<button class="btn small ghost" data-act="toggle-quest">${n.status === 'concluída' ? 'Reabrir' : 'Concluir'}</button>` : ''}
+      <button class="btn small" data-act="edit-note">Editar</button>${confirmBtn('note:' + n.id)}</div></div>
+    <p class="prose" style="margin-top:18px">${esc(n.body) || '<span style="color:var(--muted)">Sem texto.</span>'}</p>
+    <p style="color:var(--muted);font-size:13px;margin-top:20px">Atualizada em ${fmtDate(n.updatedAt)}</p>
+  </article>`;
+}
+
+/* --- mundo --- */
+function worldBody() { return {mapa: viewMap, locais: viewPlaces, lore: viewLore}[st.wtab](); }
+
+function pinHtml(p) {
+  return `<button class="pin ${pinClass(p.type)}${p.id === st.sel.places ? ' sel' : ''}" data-tier="${tierOf(p)}" style="left:${+p.x}%;top:${+p.y}%" data-act="pin" data-id="${esc(p.id)}" title="${esc(p.name)} · ${esc(p.type)}"><span class="mk"></span><span class="lb">${esc(p.name)}</span></button>`;
+}
+function legendHtml() {
+  const L = [['Capital', 'capital'], ['Cidade', 'cidade'], ['Vila', 'vila'], ['Vilarejo', 'vilarejo'], ['Castelo / fortaleza', 'forte'], ['Templo', 'templo'], ['Ruína / masmorra', 'ruina'], ['Natureza', 'natureza']];
+  return `<div class="legend">${L.map(([l, c]) => `<span><span class="pin t-${c}"><span class="mk"></span></span>${l}</span>`).join('')}</div>`;
+}
+
+function viewMap() {
+  const w = curWorld(); const src = mapSrc(w);
+  const sel = st.places.find(p => p.id === st.sel.places);
+  const placed = st.places.filter(p => p.x != null && p.y != null && p.x !== '' && p.y !== '');
+  const unplaced = st.places.filter(p => !placed.includes(p)).sort(byName);
+  const dims = mapDimsOf(w);
+  const v = st.view[w.id];
+  const pl = st.placing;
+  const placingName = pl ? (pl.id ? st.places.find(p => p.id === pl.id)?.name : 'a nova localidade') : '';
+  let map;
+  if (!src) {
+    map = `<div class="map-empty"><h3>Mapa de ${esc(w.name)}</h3>
+      <p>Envie a imagem do mapa (JPG, PNG ou WebP). Depois é só clicar nele para marcar cidades, vilas, castelos e outros lugares.</p>
+      <button class="btn primary" data-act="map-upload">Enviar mapa</button>
+      <p style="font-size:13px">Sem mapa, você ainda pode cadastrar localidades na aba Localidades.</p></div>`;
+  } else {
+    const cs = dims ? `width:${dims[0]}px;height:${dims[1]}px;${v ? `transform:translate(${v.tx}px,${v.ty}px) scale(${v.s});--s:${v.s}` : 'visibility:hidden'}` : 'width:10px;height:10px;visibility:hidden';
+    map = `<div class="map-tools">
+        <label class="zoom-ctl" for="zoom-range"><span>Zoom</span><input type="range" id="zoom-range" min="-30" max="350" step="5" value="0" aria-label="Nível de zoom"><span class="zoom" id="zoom-label">100%</span></label>
+        <button class="btn small ghost" data-act="labels">${st.labels ? 'Ocultar nomes' : 'Mostrar nomes'}</button>
+        <button class="btn small ghost" data-act="lod" title="Quando ligado, lugares menores só aparecem ao aproximar">${st.lod ? 'Detalhe pelo zoom: ligado' : 'Mostrando todos os lugares'}</button>
+        <span class="spacer"></span>
+        <button class="btn small primary" data-act="place-new">+ Localidade no mapa</button>
+        <button class="btn small ghost" data-act="map-upload">Trocar mapa</button></div>
+      ${pl ? `<div class="placing-bar" role="status"><span>Clique no mapa para posicionar <b>${esc(placingName)}</b>. Você ainda pode arrastar e dar zoom para achar o ponto.</span><button class="btn small" data-act="place-cancel">Cancelar</button></div>` : ''}
+      <div class="map-view${pl ? ' placing' : ''}${st.labels ? '' : ' nolabels'}" id="map-view" tabindex="0" aria-label="Mapa de ${esc(w.name)}. Setas movem, mais e menos dão zoom, zero enquadra.">
+        <div class="map-canvas" id="map-canvas" style="${cs}">
+          <img id="map-img" src="${esc(src)}" alt="" draggable="false">
+          ${placed.map(pinHtml).join('')}
+        </div>
+        <div class="map-ctl zoom-btns">
+          <button type="button" data-act="mz" data-z="in" aria-label="Aproximar">+</button>
+          <button type="button" data-act="mz" data-z="out" aria-label="Afastar">−</button>
+          <button type="button" data-act="mz" data-z="fit" aria-label="Enquadrar o mapa inteiro" title="Enquadrar o mapa inteiro">⤢</button>
+        </div>
+        <div class="map-ctl dpad" aria-label="Mover o mapa">
+          <button type="button" class="up" data-act="mpan" data-dx="0" data-dy="1" aria-label="Mover para cima">▲</button>
+          <button type="button" class="left" data-act="mpan" data-dx="1" data-dy="0" aria-label="Mover para a esquerda">◀</button>
+          <button type="button" class="mid" data-act="mz" data-z="center" aria-label="Centralizar" title="${sel && sel.x != null && sel.x !== '' ? 'Centralizar em ' + esc(sel.name) : 'Centralizar'}">●</button>
+          <button type="button" class="right" data-act="mpan" data-dx="-1" data-dy="0" aria-label="Mover para a direita">▶</button>
+          <button type="button" class="down" data-act="mpan" data-dx="0" data-dy="-1" aria-label="Mover para baixo">▼</button>
+        </div>
+      </div>
+      <p class="map-hint">Roda do mouse ou pinça: zoom · Arrastar: mover · Duplo clique: aproximar · Lugares menores aparecem ao aproximar · No teclado: setas movem, + e − dão zoom, 0 enquadra</p>
+      ${legendHtml()}
+      ${unplaced.length ? `<div class="unplaced">Ainda sem posição no mapa (clique para marcar):<div class="people">${unplaced.map(p => `<button class="person" data-act="place-set" data-id="${esc(p.id)}">${esc(p.name)} <span class="type-badge">${esc(p.type)}</span></button>`).join('')}</div></div>` : ''}`;
+  }
+  const side = sel ? placeDetail(sel, true)
+    : `<div class="side-empty"><h3>${placed.length ? 'Escolha um lugar no mapa' : 'Nenhum lugar marcado'}</h3><p>${src ? 'Clique em um marcador para ver a ficha do lugar. Use <b>+ Localidade no mapa</b> para cadastrar e marcar ao mesmo tempo.' : 'Depois de enviar o mapa, os lugares aparecem aqui.'}</p></div>`;
+  return `<div class="map-layout"><section class="pane">${map}</section><section class="pane">${side}</section></div>`;
+}
+
+function viewPlaces() {
+  const list = placesFiltered(), sel = st.places.find(p => p.id === st.sel.places);
+  const types = PLACE_TYPES.map(([t]) => t).filter(t => st.places.some(p => p.type === t));
+  const byId = Object.fromEntries(st.places.map(p => [p.id, p]));
+  const items = list.length ? list.map(p => `<li><button class="item" data-act="sel" data-kind="places" data-id="${esc(p.id)}" aria-current="${p.id === st.sel.places}" style="grid-template-columns:18px minmax(0,1fr) auto">
+      <span class="pin ${pinClass(p.type)}" style="position:static;transform:none;pointer-events:none;margin-top:5px"><span class="mk"></span></span>
+      <span><b>${esc(p.name)}</b><span class="sub">${esc([p.type, byId[p.parent]?.name || p.region].filter(Boolean).join(' · '))}</span></span>
+      <span class="meta">${p.x != null && p.x !== '' ? '' : '<span class="pill" title="Sem posição no mapa">sem mapa</span>'}</span></button></li>`).join('')
+    : `<li class="empty">${st.places.length ? 'Nada encontrado.' : (st.loaded.places ? `Nenhuma localidade em ${esc(curWorld()?.name)} ainda. Cadastre cidades, vilas, castelos e outros lugares importantes.` : 'Carregando…')}</li>`;
+  return `<div class="work${sel ? ' has-sel' : ''}">
+    <section class="pane list-pane">${listHead('places', 'Buscar lugar, região, governante…', 'new-place', '+ Nova')}
+      <div class="chips">${chip('fType', '', 'Todos')}${types.map(t => chip('fType', t, t)).join('')}</div>
+      <ul class="items">${items}</ul></section>
+    <section class="pane detail-pane">${sel ? placeDetail(sel, false) : '<div class="detail-empty">Escolha uma localidade para ver a ficha.</div>'}</section>
+  </div>`;
+}
+
+function placeDetail(p, compact) {
+  const byId = Object.fromEntries(st.places.map(x => [x.id, x]));
+  const parent = byId[p.parent];
+  const children = st.places.filter(x => x.parent === p.id).sort(byName);
+  const hasPos = p.x != null && p.x !== '';
+  const fact = (l, v) => v ? `<div><dt>${l}</dt><dd>${v}</dd></div>` : '';
+  const camp = inCampaign() ? curCamp() : null;
+  let campHtml = '';
+  if (camp) {
+    const pn = st.pnotes.find(x => x.id === p.id);
+    const here = st.npcs.filter(n => placeOfNpc(n)?.id === p.id).sort(byName);
+    const latest = sessionsSorted()[0];
+    campHtml = `<div class="section-h"><h3>Nesta campanha</h3><span class="scope camp">${esc(camp.name)}</span></div>
+      <p class="world-note">O que o grupo viu, fez ou descobriu aqui. Fica só nesta campanha.</p>
+      <form class="adder" data-form="place-note">
+        <textarea id="pnote-${esc(p.id)}" data-keep placeholder="Ex.: o grupo atravessou a ponte à noite e foi seguido…"></textarea>
+        <div class="row"><span class="hint">Ctrl+Enter para registrar</span><select id="pnote-s-${esc(p.id)}" data-keep aria-label="Sessão">${sessionOptions(latest?.num)}</select><button class="btn primary">Registrar</button></div>
+      </form>
+      ${entriesHtml(pn?.entries, 'pnote:')}
+      ${here.length ? `<div class="section-h"><h3>Personalidades aqui</h3><small>${here.length}</small></div>
+        <div class="people">${here.map(n => `<button class="person" data-act="goto-npc" data-id="${esc(n.id)}"><span class="dot ${esc(n.disp)}"></span>${esc(n.name)}</button>`).join('')}</div>` : ''}`;
+  }
+  return `${compact ? '' : '<button class="btn small ghost back" data-act="back">← Localidades</button>'}
+  <article class="detail">
+    <div class="detail-head"><div><p class="eyebrow">${esc(p.type)}${p.region ? ' · ' + esc(p.region) : ''}</p><h2>${esc(p.name)}</h2>
+      ${parent ? `<p class="epithet">em <button class="link" data-act="goto-place" data-id="${esc(parent.id)}">${esc(parent.name)}</button></p>` : ''}</div>
+      <div class="actions"><button class="btn small" data-act="edit-place">Editar</button>
+        ${!compact && hasPos ? `<button class="btn small ghost" data-act="show-on-map">Ver no mapa</button>` : ''}
+        ${mapSrc(curWorld()) ? `<button class="btn small ghost" data-act="place-set" data-id="${esc(p.id)}">${hasPos ? 'Mover no mapa' : 'Marcar no mapa'}</button>` : ''}
+        ${confirmBtn('place:' + p.id)}</div></div>
+    <dl class="facts">${fact('Governante', esc(p.ruler))}${fact('População', esc(p.population))}${fact('Região', esc(p.region))}${fact('No mapa', hasPos ? 'Marcado' : 'Sem posição')}</dl>
+    ${p.desc ? `<p class="prose">${esc(p.desc)}</p>` : '<p class="prose" style="color:var(--muted)">Sem descrição ainda.</p>'}
+    ${(p.tags || []).length ? `<div class="tags">${p.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+    ${children.length ? `<div class="section-h"><h3>Lugares dentro de ${esc(p.name)}</h3><small>${children.length}</small></div>
+      <div class="people">${children.map(c => `<button class="person" data-act="goto-place" data-id="${esc(c.id)}">${esc(c.name)} <span class="type-badge">${esc(c.type)}</span></button>`).join('')}</div>` : ''}
+    <div class="section-h"><h3>Crônica do lugar</h3><span class="scope world">${esc(curWorld()?.name)}</span></div>
+    <p class="world-note">Fatos e história que valem para todas as campanhas.</p>
+    <form class="adder" data-form="place-entry">
+      <textarea id="pentry-${esc(p.id)}" data-keep placeholder="Ex.: a ponte de pedra é a única travessia do rio na região…"></textarea>
+      <div class="row"><span class="hint">Ctrl+Enter para registrar</span><button class="btn primary">Registrar</button></div>
+    </form>
+    ${entriesHtml(p.entries, 'pentry:', false)}
+    ${campHtml}
+  </article>`;
+}
+
+function viewLore() {
+  const q = norm(st.q.lore);
+  const list = st.lore.filter(n => (!st.fLore || n.cat === st.fLore) && (!q || norm(n.title + ' ' + n.body).includes(q)))
+    .sort((a, b) => (LORE_CATS.indexOf(a.cat) - LORE_CATS.indexOf(b.cat)) || byName(a, b));
+  const sel = st.lore.find(n => n.id === st.sel.lore);
+  const cats = LORE_CATS.filter(c => st.lore.some(n => n.cat === c));
+  const items = list.length ? list.map(n => `<li><button class="item" data-act="sel" data-kind="lore" data-id="${esc(n.id)}" aria-current="${n.id === st.sel.lore}" style="grid-template-columns:minmax(0,1fr)">
+      <span><b>${esc(n.title)}</b><span class="sub">${esc(n.cat)}</span></span></button></li>`).join('')
+    : `<li class="empty">${st.lore.length ? 'Nada encontrado.' : (st.loaded.lore ? `Sem lore de ${esc(curWorld()?.name)} ainda. Registre história, divindades, facções, povos…` : 'Carregando…')}</li>`;
+  return `<div class="work${sel ? ' has-sel' : ''}">
+    <section class="pane list-pane">${listHead('lore', 'Buscar no lore…', 'new-lore', '+ Novo')}
+      <div class="chips">${chip('fLore', '', 'Tudo')}${cats.map(c => chip('fLore', c, c)).join('')}</div>
+      <ul class="items">${items}</ul></section>
+    <section class="pane detail-pane">${sel ? `<button class="btn small ghost back" data-act="back">← Lore</button>
+      <article class="detail"><div class="detail-head"><div><p class="eyebrow">${esc(sel.cat)}</p><h2>${esc(sel.title)}</h2></div>
+        <div class="actions"><button class="btn small" data-act="edit-lore">Editar</button>${confirmBtn('lore:' + sel.id)}</div></div>
+        <p class="prose" style="margin-top:18px">${esc(sel.body) || '<span style="color:var(--muted)">Sem texto.</span>'}</p>
+        <p class="shared-hint">Atualizado em ${fmtDate(sel.updatedAt)} · vale para todas as campanhas em ${esc(curWorld()?.name)}</p></article>`
+      : '<div class="detail-empty">Escolha um registro de lore.</div>'}</section>
+  </div>`;
+}
+
+/* ---------- mapa: envio, zoom, marcação ---------- */
+async function loadImg(file) {
+  const url = URL.createObjectURL(file); const img = new Image();
+  await new Promise((r, j) => { img.onload = r; img.onerror = j; img.src = url; });
+  return {img, url};
+}
+async function uploadMap(file) {
+  const w = curWorld(); if (!w) return;
+  if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) return toast('Use uma imagem JPG, PNG, WebP ou GIF.');
+  let im; try { im = await loadImg(file); } catch { return toast('Não consegui abrir essa imagem.'); }
+  const W = im.img.naturalWidth, H = im.img.naturalHeight;
+  toast('Enviando o mapa…');
+  if (store.mode === 'db') {
+    let assets = null; try { assets = await window.claude.use('assets'); } catch {}
+    if (!assets) { URL.revokeObjectURL(im.url); return toast('Só quem pode editar o Grimório consegue enviar o mapa.'); }
+    try {
+      const r = await assets.upload(file);
+      const old = w.mapAsset;
+      if (await save('worlds', w.id, {...strip(w), mapAsset: r.id, mapW: W, mapH: H, updatedAt: nowIso()})) {
+        st.mapDims[w.id] = [W, H]; delete st.view[w.id]; toast('Mapa salvo.');
+        if (old && old !== r.id) { try { await assets.delete(old); } catch {} }
+      }
+    } catch (e) {
+      toast(e?.code === 'too_large' ? 'A imagem passa de 20 MB. Reduza o tamanho e tente de novo.' : e?.code === 'quota_or_state' ? 'Acabou o espaço para arquivos deste Grimório.' : 'Não foi possível enviar o mapa. Tente de novo.');
+    }
+  } else {
+    let ok = false;
+    for (const [max, q] of [[3200, .85], [2400, .8], [1800, .72]]) {
+      const k = Math.min(1, max / Math.max(W, H));
+      const c = document.createElement('canvas'); c.width = Math.round(W * k); c.height = Math.round(H * k);
+      c.getContext('2d').drawImage(im.img, 0, 0, c.width, c.height);
+      if (lsSet('grimorio-mapa-' + w.id, c.toDataURL('image/jpeg', q))) { ok = true; break; }
+    }
+    if (ok && await save('worlds', w.id, {...strip(w), mapW: W, mapH: H, updatedAt: nowIso()})) { st.mapDims[w.id] = [W, H]; delete st.view[w.id]; toast('Mapa salvo neste navegador.'); }
+    else if (!ok) toast('A imagem é grande demais para guardar no navegador. Tente uma versão menor.');
+  }
+  URL.revokeObjectURL(im.url); render();
+}
+/* ---------- mapa: câmera (zoom e movimento) ---------- */
+const MAXZ = 12, MINZ = 0.75;
+const V = () => st.view[st.wid];
+function mapDimsOf(w) { return w ? (st.mapDims[w.id] || (w.mapW && w.mapH ? [w.mapW, w.mapH] : null)) : null; }
+function viewBox() { const v = $('#map-view'); return v && v.clientWidth ? [v.clientWidth, v.clientHeight] : null; }
+function fitScale() { const d = mapDimsOf(curWorld()), b = viewBox(); return d && b ? Math.min(b[0] / d[0], b[1] / d[1]) : 1; }
+function clampView(v) {
+  const d = mapDimsOf(curWorld()), b = viewBox(); if (!d || !b || !v) return v;
+  const f = fitScale(); v.s = Math.min(f * MAXZ, Math.max(f * MINZ, v.s));
+  const W = d[0] * v.s, H = d[1] * v.s, m = 60;
+  v.tx = W <= b[0] ? (b[0] - W) / 2 : Math.min(m, Math.max(b[0] - W - m, v.tx));
+  v.ty = H <= b[1] ? (b[1] - H) / 2 : Math.min(m, Math.max(b[1] - H - m, v.ty));
+  return v;
+}
+function applyView() {
+  const c = $('#map-canvas'), v = V(); if (!c || !v) return;
+  c.style.transform = `translate(${v.tx}px,${v.ty}px) scale(${v.s})`; c.style.setProperty('--s', v.s); c.style.visibility = '';
+  const rel = v.s / fitScale();
+  const z = $('#zoom-label'); if (z) z.textContent = Math.round(rel * 100) + '%';
+  const r = $('#zoom-range'); if (r && document.activeElement !== r) r.value = Math.round(Math.log2(rel) * 100);
+  const lod = st.lod;
+  c.querySelectorAll('.pin').forEach(el => {
+    const [zi, zl] = TIER_ZOOM[el.dataset.tier] || TIER_ZOOM[3], sel = el.classList.contains('sel');
+    el.classList.toggle('hid', lod && !sel && rel < zi);
+    el.classList.toggle('nolb', lod && !sel && rel < zl);
+  });
+}
+function fitView() {
+  const d = mapDimsOf(curWorld()), b = viewBox(); if (!d || !b) return;
+  const s = fitScale(); st.view[st.wid] = clampView({s, tx: (b[0] - d[0] * s) / 2, ty: (b[1] - d[1] * s) / 2}); applyView();
+}
+function zoomAt(factor, px, py) {
+  const v = V(), b = viewBox(); if (!v || !b) return;
+  if (px == null) { px = b[0] / 2; py = b[1] / 2; }
+  const f = fitScale(), s2 = Math.min(f * MAXZ, Math.max(f * MINZ, v.s * factor)), k = s2 / v.s;
+  v.tx = px - (px - v.tx) * k; v.ty = py - (py - v.ty) * k; v.s = s2;
+  clampView(v); applyView();
+}
+function panBy(dx, dy) { const v = V(); if (!v) return; v.tx += dx; v.ty += dy; clampView(v); applyView(); }
+function centerOn(p, minRel = 2) {
+  const d = mapDimsOf(curWorld()), b = viewBox(); if (!d || !b || p.x == null || p.x === '') return;
+  if (!V()) fitView(); const v = V(); v.s = Math.max(v.s, fitScale() * minRel);
+  v.tx = b[0] / 2 - (+p.x / 100) * d[0] * v.s; v.ty = b[1] / 2 - (+p.y / 100) * d[1] * v.s;
+  clampView(v); applyView();
+}
+function initMapView() {
+  if (!$('#map-canvas') || !mapDimsOf(curWorld())) return;
+  if (!V()) fitView(); else { clampView(V()); applyView(); }
+}
+async function placeAt(ev) {
+  const c = $('#map-canvas'); if (!c) return;
+  const r = c.getBoundingClientRect();
+  const x = +(((ev.clientX - r.left) / r.width) * 100).toFixed(2), y = +(((ev.clientY - r.top) / r.height) * 100).toFixed(2);
+  if (x < 0 || x > 100 || y < 0 || y > 100) return toast('Clique dentro da imagem do mapa.');
+  const pl = st.placing; st.placing = null;
+  if (pl.id) {
+    const p = st.places.find(q => q.id === pl.id);
+    if (p && await save(wsub('places'), p.id, {...strip(p), x, y, updatedAt: nowIso()})) { st.sel.places = p.id; toast(`${p.name} marcado no mapa.`); }
+    render();
+  } else { render(); placeForm(null, {x, y}); }
+}
+/* arrastar (mouse ou dedo) e pinça */
+const ptrs = new Map(); let gest = null, suppressClick = false;
+const relPt = (x, y) => { const r = $('#map-view').getBoundingClientRect(); return [x - r.left, y - r.top]; };
+document.addEventListener('pointerdown', ev => {
+  const v = ev.target.closest?.('#map-view'); if (!v || ev.target.closest('.map-ctl')) return;
+  if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+  ptrs.set(ev.pointerId, {x: ev.clientX, y: ev.clientY});
+  if (ptrs.size === 1) gest = {moved: false, sx: ev.clientX, sy: ev.clientY, pinch: null};
+  else if (ptrs.size === 2 && gest) { const [a, b] = [...ptrs.values()]; gest.pinch = Math.hypot(a.x - b.x, a.y - b.y) || 1; gest.moved = true; }
+});
+document.addEventListener('pointermove', ev => {
+  if (!ptrs.has(ev.pointerId) || !gest) return;
+  const prev = ptrs.get(ev.pointerId), cur = {x: ev.clientX, y: ev.clientY}; ptrs.set(ev.pointerId, cur);
+  if (ptrs.size >= 2 && gest.pinch) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    const [mx, my] = relPt((a.x + b.x) / 2, (a.y + b.y) / 2);
+    zoomAt(d / gest.pinch, mx, my); panBy((cur.x - prev.x) / 2, (cur.y - prev.y) / 2); gest.pinch = d; return;
+  }
+  if (!gest.moved && Math.hypot(cur.x - gest.sx, cur.y - gest.sy) > 5) { gest.moved = true; $('#map-view')?.classList.add('dragging'); }
+  if (gest.moved) panBy(cur.x - prev.x, cur.y - prev.y);
+});
+const endPtr = ev => {
+  if (!ptrs.delete(ev.pointerId)) return;
+  if (gest && ptrs.size < 2) gest.pinch = null;
+  if (!ptrs.size) { if (gest?.moved) { suppressClick = true; setTimeout(() => suppressClick = false, 60); } $('#map-view')?.classList.remove('dragging'); gest = null; }
+};
+document.addEventListener('pointerup', endPtr);
+document.addEventListener('pointercancel', endPtr);
+document.addEventListener('click', ev => { if (suppressClick && ev.target.closest?.('#map-view')) { ev.stopPropagation(); ev.preventDefault(); } }, true);
+document.addEventListener('wheel', ev => {
+  const v = ev.target.closest?.('#map-view'); if (!v || !V()) return;
+  ev.preventDefault();
+  const dy = ev.deltaY * (ev.deltaMode === 1 ? 30 : ev.deltaMode === 2 ? 300 : 1);
+  const [px, py] = relPt(ev.clientX, ev.clientY);
+  zoomAt(Math.exp(-dy * 0.0018), px, py);
+}, {passive: false});
+document.addEventListener('dblclick', ev => {
+  const v = ev.target.closest?.('#map-view'); if (!v || ev.target.closest('.map-ctl, .pin') || st.placing) return;
+  const [px, py] = relPt(ev.clientX, ev.clientY); zoomAt(2, px, py);
+});
+document.addEventListener('input', ev => {
+  if (ev.target.id !== 'zoom-range' || !V()) return;
+  const target = fitScale() * Math.pow(2, +ev.target.value / 100);
+  zoomAt(target / V().s);
+});
+let resizeT; window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (V()) { clampView(V()); applyView(); } }, 120); });
+document.addEventListener('load', ev => {
+  if (ev.target.id !== 'map-img') return;
+  const w = curWorld(), im = ev.target; if (!w) return;
+  const d = [im.naturalWidth, im.naturalHeight], cur = mapDimsOf(w);
+  if (!d[0]) return;
+  if (!cur || Math.abs(cur[0] / cur[1] - d[0] / d[1]) > 0.01) { st.mapDims[w.id] = d; delete st.view[w.id]; render(); }
+}, true);
+
+/* ---------- dados ---------- */
+function rand(n) { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n + 1; }
+function roll(expr) {
+  const s = expr.replace(/\s+/g, '').toLowerCase().replace(/d%/g, 'd100');
+  if (!s) throw new Error('Digite uma expressão, ex.: 2d6+3');
+  const re = /([+-]?)(?:(\d*)d(\d+)(?:(k[hl])(\d+))?|(\d+))/y;
+  let pos = 0, total = 0, parts = [], crit = false, fumble = false, d20s = 0;
+  while (pos < s.length) {
+    re.lastIndex = pos; const m = re.exec(s);
+    if (!m || !m[0]) throw new Error('Não entendi "' + s.slice(pos) + '". Use algo como 1d20+5 ou 4d6kh3.');
+    if (pos > 0 && !m[1]) throw new Error('Separe os termos com + ou −.');
+    pos = re.lastIndex;
+    const sign = m[1] === '-' ? -1 : 1;
+    if (m[3]) {
+      const n = m[2] === '' ? 1 : +m[2], sides = +m[3];
+      if (n < 1 || n > 100 || sides < 2 || sides > 1000) throw new Error('Use de 1 a 100 dados, com 2 a 1000 lados.');
+      const rolls = Array.from({length: n}, () => rand(sides));
+      let kept = rolls.map((v, i) => i);
+      if (m[4]) { const k = Math.min(+m[5], n); const order = rolls.map((v, i) => i).sort((a, b) => m[4] === 'kh' ? rolls[b] - rolls[a] : rolls[a] - rolls[b]); kept = order.slice(0, k); }
+      total += sign * kept.reduce((t, i) => t + rolls[i], 0);
+      if (sides === 20) { d20s++; for (const i of kept) { if (rolls[i] === 20) crit = true; if (rolls[i] === 1) fumble = true; } }
+      parts.push(`${sign < 0 ? '− ' : parts.length ? '+ ' : ''}${n}d${sides}${m[4] ? m[4] + m[5] : ''} [${rolls.map((v, i) => kept.includes(i) ? v : '(' + v + ')').join(', ')}]`);
+    } else { total += sign * +m[6]; parts.push(`${sign < 0 ? '− ' : parts.length ? '+ ' : ''}${m[6]}`); }
+  }
+  return {expr: s, total, detail: parts.join(' '), crit: d20s === 1 && crit, fumble: d20s === 1 && fumble && !crit};
+}
+function doRoll(expr) {
+  try {
+    const r = roll(expr); st.dice.last = r; st.dice.err = ''; st.dice.expr = expr;
+    st.dice.hist.unshift({expr: r.expr, total: r.total}); st.dice.hist = st.dice.hist.slice(0, 20);
+    lsSet('grimorio-dados-hist', JSON.stringify(st.dice.hist));
+  } catch (e) { st.dice.err = e.message; }
+  renderDice();
+}
+function renderDice() {
+  const d = st.dice;
+  const quick = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100', '2d6'];
+  swap($('#dice'), `<button class="dice-fab" data-act="dice-toggle" aria-label="${d.open ? 'Fechar dados' : 'Rolar dados'}" aria-expanded="${d.open}">${D20}</button>
+  ${d.open ? `<section class="dice" aria-label="Rolador de dados"><h3>Rolar dados</h3>
+    <form data-form="dice"><input id="dice-expr" value="${esc(d.expr)}" aria-label="Expressão" placeholder="1d20+5" autocomplete="off"><button class="btn primary">Rolar</button></form>
+    <div class="dice-quick">${quick.map(q => `<button type="button" data-act="dice-quick" data-expr="${q.startsWith('d') ? '1' + q : q}">${q}</button>`).join('')}
+      <button type="button" class="wide" data-act="dice-quick" data-expr="2d20kh1">Vantagem</button><button type="button" class="wide" data-act="dice-quick" data-expr="2d20kl1">Desvantagem</button></div>
+    ${d.err ? `<p class="err">${esc(d.err)}</p>` : ''}
+    ${d.last ? `<div class="dice-result"><div class="total${d.last.crit ? ' crit' : d.last.fumble ? ' fumble' : ''}">${d.last.total}</div><div class="break">${esc(d.last.detail)}${d.last.crit ? ' · 20 natural!' : d.last.fumble ? ' · 1 natural' : ''}</div></div>` : ''}
+    ${d.hist.length > 1 ? `<ul class="dice-hist">${d.hist.slice(1, 12).map(h => `<li><span>${esc(h.expr)}</span><b>${h.total}</b></li>`).join('')}</ul>` : ''}
+  </section>` : ''}`);
+}
+
+/* ---------- exportar / importar ---------- */
+async function exportData() {
+  const out = {app: 'grimorio', version: 2, exportedAt: nowIso(), worlds: [], campaigns: []};
+  let camps = st.campaigns, worlds = st.worlds;
+  if (st.screen === 'campaign') { camps = st.campaigns.filter(c => c.id === st.cid); worlds = [worldOf(curCamp())].filter(Boolean); }
+  else if (st.screen === 'world') { camps = []; worlds = [curWorld()].filter(Boolean); }
+  for (const w of worlds) {
+    const e = {world: w, places: await store.list(`worlds/${w.id}/places`), lore: await store.list(`worlds/${w.id}/lore`)};
+    if (store.mode === 'local') e.mapData = lsGet('grimorio-mapa-' + w.id);
+    out.worlds.push(e);
+  }
+  for (const c of camps) {
+    const e = {campaign: c};
+    for (const k of ['npcs', 'sessions', 'notes', 'placeNotes']) e[k] = await store.list(`campaigns/${c.id}/${k}`);
+    out.campaigns.push(e);
+  }
+  const label = st.screen === 'campaign' ? curCamp()?.name : st.screen === 'world' ? curWorld()?.name : 'tudo';
+  const filename = `grimorio-${norm(label).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${new Date().toLocaleDateString('en-CA')}.json`;
+  const json = JSON.stringify(out, null, 2);
+  let dl = null;
+  try { dl = window.claude?.use ? await window.claude.use('downloads') : null; } catch {}
+  if (dl) { try { await dl.save({filename, data: json}); } catch { toast('O download não foi concluído.'); } return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], {type: 'application/json'})); a.download = filename;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+async function importData(file) {
+  let data; try { data = JSON.parse(await file.text()); } catch { return toast('Esse arquivo não é um backup válido do Grimório.'); }
+  if (data?.app !== 'grimorio' || !Array.isArray(data.campaigns)) return toast('Esse arquivo não é um backup válido do Grimório.');
+  const worldMap = {}; let nw = 0, nc = 0;
+  for (const e of (data.worlds || [])) {
+    const src = e.world || {}; const same = st.worlds.find(w => norm(w.name) === norm(src.name));
+    const wid = same ? same.id : (src.id && !st.worlds.some(w => w.id === src.id) ? src.id : uid());
+    worldMap[src.id] = wid;
+    if (!same) { const d = strip(src); if (store.mode === 'local') delete d.mapAsset; if (!await save('worlds', wid, d)) return; nw++; }
+    if (e.mapData && store.mode === 'local' && !lsGet('grimorio-mapa-' + wid)) lsSet('grimorio-mapa-' + wid, e.mapData);
+    for (const k of ['places', 'lore']) {
+      const existing = await store.list(`worlds/${wid}/${k}`); const names = new Set(existing.map(x => norm(x.name || x.title)));
+      for (const d of (e[k] || [])) if (!names.has(norm(d.name || d.title)) && !existing.some(x => x.id === d.id)) await store.put(`worlds/${wid}/${k}`, d.id || uid(), strip(d));
+    }
+  }
+  for (const e of data.campaigns) {
+    const cid = uid(); const c = strip(e.campaign || {});
+    c.worldId = worldMap[c.worldId] || (st.worlds.some(w => w.id === c.worldId) ? c.worldId : worldOf(null)?.id);
+    if (st.campaigns.some(x => x.name === c.name)) c.name += ' (importada)';
+    if (!await save('campaigns', cid, c)) return;
+    for (const k of ['npcs', 'sessions', 'notes', 'placeNotes']) for (const d of (e[k] || [])) await store.put(`campaigns/${cid}/${k}`, d.id || uid(), strip(d));
+    nc++;
+  }
+  const parts = [nw && `${nw} mundo(s)`, nc && `${nc} campanha(s)`].filter(Boolean);
+  toast(parts.length ? parts.join(' e ') + ' importado(s).' : 'Dados do mundo mesclados.');
+}
+
+/* ---------- ações ---------- */
+async function addEntry(kind) {
+  if (kind === 'npc') {
+    const n = st.npcs.find(x => x.id === st.sel.npcs); if (!n) return;
+    const ta = document.getElementById('entry-' + n.id), text = ta.value.trim(); if (!text) return ta.focus();
+    const s = document.getElementById('entry-s-' + n.id).value;
+    if (await save(sub('npcs'), n.id, {...strip(n), entries: [...clone(n.entries || []), {id: uid(), text, session: s ? +s : null, at: nowIso()}], updatedAt: nowIso()})) { ta.value = ''; ta.focus(); }
+  } else if (kind === 'log') {
+    const s = st.sessions.find(x => x.id === st.sel.sessions); if (!s) return;
+    const ta = document.getElementById('log-' + s.id), text = ta.value.trim(); if (!text) return ta.focus();
+    if (await save(sub('sessions'), s.id, {...strip(s), log: [...clone(s.log || []), {id: uid(), text, at: nowIso()}], updatedAt: nowIso()})) { ta.value = ''; ta.focus(); }
+  } else if (kind === 'pentry') {
+    const p = st.places.find(x => x.id === st.sel.places); if (!p) return;
+    const ta = document.getElementById('pentry-' + p.id), text = ta.value.trim(); if (!text) return ta.focus();
+    if (await save(wsub('places'), p.id, {...strip(p), entries: [...clone(p.entries || []), {id: uid(), text, at: nowIso()}], updatedAt: nowIso()})) { ta.value = ''; ta.focus(); }
+  } else if (kind === 'pnote') {
+    const p = st.places.find(x => x.id === st.sel.places); if (!p) return;
+    const ta = document.getElementById('pnote-' + p.id), text = ta.value.trim(); if (!text) return ta.focus();
+    const s = document.getElementById('pnote-s-' + p.id).value;
+    const pn = st.pnotes.find(x => x.id === p.id);
+    const entries = [...clone(pn?.entries || []), {id: uid(), text, session: s ? +s : null, at: nowIso()}];
+    if (await save(sub('placeNotes'), p.id, {placeName: p.name, entries, updatedAt: nowIso()})) { ta.value = ''; ta.focus(); }
+  }
+}
+
+let confirmT;
+async function handleDelete(key) {
+  if (st.confirm !== key) { st.confirm = key; clearTimeout(confirmT); confirmT = setTimeout(() => { st.confirm = null; render(); }, 4000); return render(); }
+  st.confirm = null; clearTimeout(confirmT);
+  const i = key.indexOf(':'), type = key.slice(0, i), id = key.slice(i + 1);
+  if (type === 'camp') await deleteCampaign(id);
+  else if (type === 'world') await deleteWorld(id);
+  else if (type === 'npc') { if (await remove(sub('npcs'), id)) st.sel.npcs = null; }
+  else if (type === 'session') { if (await remove(sub('sessions'), id)) st.sel.sessions = null; }
+  else if (type === 'note') { if (await remove(sub('notes'), id)) st.sel.notes = null; }
+  else if (type === 'place') { if (await remove(wsub('places'), id)) st.sel.places = null; }
+  else if (type === 'lore') { if (await remove(wsub('lore'), id)) st.sel.lore = null; }
+  else if (type === 'entry') { const n = st.npcs.find(x => x.id === st.sel.npcs); if (n) await save(sub('npcs'), n.id, {...strip(n), entries: (n.entries || []).filter(e => e.id !== id), updatedAt: nowIso()}); }
+  else if (type === 'log') { const s = st.sessions.find(x => x.id === st.sel.sessions); if (s) await save(sub('sessions'), s.id, {...strip(s), log: (s.log || []).filter(l => l.id !== id)}); }
+  else if (type === 'pentry') { const p = st.places.find(x => x.id === st.sel.places); if (p) await save(wsub('places'), p.id, {...strip(p), entries: (p.entries || []).filter(e => e.id !== id), updatedAt: nowIso()}); }
+  else if (type === 'pnote') { const pn = st.pnotes.find(x => x.id === st.sel.places); if (pn) await save(sub('placeNotes'), pn.id, {...strip(pn), entries: (pn.entries || []).filter(e => e.id !== id), updatedAt: nowIso()}); }
+  render();
+}
+
+function gotoPlace(id, onMap) {
+  const fromWorld = st.screen === 'world' || st.tab === 'world';
+  if (inCampaign()) st.tab = 'world';
+  st.wtab = onMap || (fromWorld && st.wtab === 'mapa') ? 'mapa' : 'locais';
+  st.sel.places = id; window.scrollTo(0, 0); render();
+  if (st.wtab === 'mapa') { const p = st.places.find(x => x.id === id); if (p) requestAnimationFrame(() => centerOn(p)); }
+}
+
+document.addEventListener('click', async ev => {
+  if (st.placing && ev.target.closest?.('#map-canvas') && !ev.target.closest('[data-act="pin"]')) { ev.preventDefault(); return placeAt(ev); }
+  if (!st.placing && ev.target.closest?.('#map-view') && !ev.target.closest('.pin, .map-ctl')) {
+    if (st.sel.places) { st.sel.places = null; st.confirm = null; render(); }
+    return;
+  }
+  const b = ev.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act;
+  if (act === 'modal-bg') { if (ev.target === b) closeForm(); return; }
+  if (act === 'modal-close') return closeForm();
+  if (act === 'dice-toggle') { st.dice.open = !st.dice.open; renderDice(); if (st.dice.open) $('#dice-expr')?.focus(); return; }
+  if (act === 'dice-quick') { $('#dice-expr').value = b.dataset.expr; return doRoll(b.dataset.expr); }
+  if (act === 'export') return exportData();
+  if (act === 'import') return $('#import-file').click();
+  if (act === 'go-picker') return goPicker();
+  if (act === 'pick-camp') return openCampaign(b.dataset.id);
+  if (act === 'open-world') return openWorld(b.dataset.id);
+  if (act === 'new-world') return worldForm(null);
+  if (act === 'edit-world') return worldForm(st.worlds.find(w => w.id === b.dataset.id));
+  if (act === 'new-camp') return campaignForm(null);
+  if (act === 'edit-camp') return campaignForm(st.campaigns.find(c => c.id === b.dataset.id));
+  if (act === 'sample') return createSample();
+  if (act === 'del') return handleDelete(b.dataset.key);
+  if (act === 'tab') { st.tab = b.dataset.tab; st.placing = null; return render(); }
+  if (act === 'wtab') { st.wtab = b.dataset.tab; st.placing = null; return render(); }
+  if (act === 'sel') { st.sel[b.dataset.kind] = b.dataset.id; st.confirm = null; render(); if (matchMedia('(max-width:860px)').matches) window.scrollTo(0, 0); return; }
+  if (act === 'back') { const k = st.screen === 'world' || st.tab === 'world' ? (st.wtab === 'lore' ? 'lore' : 'places') : st.tab; st.sel[k] = null; return render(); }
+  if (act === 'filter') { st[b.dataset.key] = b.dataset.val; return render(); }
+  if (act === 'new-npc') return npcForm(null);
+  if (act === 'edit-npc') return npcForm(st.npcs.find(n => n.id === st.sel.npcs));
+  if (act === 'new-session') return sessionForm(null);
+  if (act === 'edit-session') return sessionForm(st.sessions.find(s => s.id === st.sel.sessions));
+  if (act === 'new-note') return noteForm(null);
+  if (act === 'edit-note') return noteForm(st.notes.find(n => n.id === st.sel.notes));
+  if (act === 'new-place') return placeForm(null);
+  if (act === 'edit-place') return placeForm(st.places.find(p => p.id === st.sel.places));
+  if (act === 'new-lore') return loreForm(null);
+  if (act === 'edit-lore') return loreForm(st.lore.find(n => n.id === st.sel.lore));
+  if (act === 'goto-npc') { st.tab = 'npcs'; st.sel.npcs = b.dataset.id; window.scrollTo(0, 0); return render(); }
+  if (act === 'goto-place') return gotoPlace(b.dataset.id, false);
+  if (act === 'show-on-map') return gotoPlace(st.sel.places, true);
+  if (act === 'pin') { st.sel.places = b.dataset.id; st.confirm = null; return render(); }
+  if (act === 'goto-session') { const s = st.sessions.find(x => String(x.num) === String(b.dataset.num)); if (s) { st.tab = 'sessions'; st.sel.sessions = s.id; window.scrollTo(0, 0); render(); } else toast('Essa sessão não está registrada.'); return; }
+  if (act === 'map-upload') return $('#map-file').click();
+  if (act === 'mz') { const z = b.dataset.z; if (z === 'in') zoomAt(1.5); else if (z === 'out') zoomAt(1 / 1.5); else if (z === 'fit') fitView();
+    else { const p = st.places.find(x => x.id === st.sel.places); if (p && p.x != null && p.x !== '') centerOn(p, 1); else { const v = V(), d = mapDimsOf(curWorld()), bx = viewBox(); if (v && d && bx) { v.tx = (bx[0] - d[0] * v.s) / 2; v.ty = (bx[1] - d[1] * v.s) / 2; clampView(v); applyView(); } } } return; }
+  if (act === 'mpan') { const bx = viewBox(); if (bx) panBy(+b.dataset.dx * bx[0] * .3, +b.dataset.dy * bx[1] * .3); return; }
+  if (act === 'lod') { st.lod = !st.lod; lsSet('grimorio-lod', st.lod ? '1' : '0'); return render(); }
+  if (act === 'labels') { st.labels = !st.labels; lsSet('grimorio-rotulos', st.labels ? '1' : '0'); return render(); }
+  if (act === 'place-new') { st.placing = {new: true}; return render(); }
+  if (act === 'place-set') { st.wtab = 'mapa'; if (inCampaign()) st.tab = 'world'; st.placing = {id: b.dataset.id}; st.sel.places = b.dataset.id; window.scrollTo(0, 0); return render(); }
+  if (act === 'place-cancel') { st.placing = null; return render(); }
+  if (act === 'toggle-pin' || act === 'toggle-quest') {
+    const n = st.notes.find(x => x.id === st.sel.notes); if (!n) return;
+    const patch = act === 'toggle-pin' ? {pinned: !n.pinned} : {status: n.status === 'concluída' ? 'aberta' : 'concluída'};
+    return save(sub('notes'), n.id, {...strip(n), ...patch, updatedAt: nowIso()});
+  }
+});
+
+document.addEventListener('submit', async ev => {
+  const f = ev.target.closest('[data-form]'); if (!f) return;
+  ev.preventDefault();
+  const k = f.dataset.form;
+  if (k === 'modal') { const m = modalState; const btn = f.querySelector('.btn.primary'); btn.disabled = true; const ok = await m.onSubmit(readForm()); if (ok !== false) closeForm(); else btn.disabled = false; render(); }
+  else if (k === 'npc-entry') addEntry('npc');
+  else if (k === 'session-log') addEntry('log');
+  else if (k === 'place-entry') addEntry('pentry');
+  else if (k === 'place-note') addEntry('pnote');
+  else if (k === 'dice') doRoll($('#dice-expr').value);
+});
+
+document.addEventListener('input', ev => {
+  const q = ev.target.dataset?.q; if (q) { st.q[q] = ev.target.value; render(); }
+});
+document.addEventListener('change', ev => {
+  if (ev.target.id === 'npc-sort') { st.npcSort = ev.target.value; render(); }
+  if (ev.target.id === 'import-file') { const file = ev.target.files[0]; ev.target.value = ''; if (file) importData(file); }
+  if (ev.target.id === 'map-file') { const file = ev.target.files[0]; ev.target.value = ''; if (file) uploadMap(file); }
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape') { if (modalState) closeForm(); else if (st.placing) { st.placing = null; render(); } else if (st.dice.open) { st.dice.open = false; renderDice(); } return; }
+  const t = ev.target;
+  if (t.id === 'map-view' && V()) {
+    const bx = viewBox(), k = ev.key;
+    if (k === 'ArrowLeft') panBy(bx[0] * .15, 0); else if (k === 'ArrowRight') panBy(-bx[0] * .15, 0);
+    else if (k === 'ArrowUp') panBy(0, bx[1] * .15); else if (k === 'ArrowDown') panBy(0, -bx[1] * .15);
+    else if (k === '+' || k === '=') zoomAt(1.25); else if (k === '-' || k === '_') zoomAt(0.8); else if (k === '0') fitView();
+    else return;
+    ev.preventDefault(); return;
+  }
+  if (ev.key === 'Enter' && t.matches?.('textarea[id^="log-"]') && !ev.shiftKey) { ev.preventDefault(); addEntry('log'); }
+  if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+    if (t.matches?.('textarea[id^="entry-"]')) { ev.preventDefault(); addEntry('npc'); }
+    if (t.matches?.('textarea[id^="pentry-"]')) { ev.preventDefault(); addEntry('pentry'); }
+    if (t.matches?.('textarea[id^="pnote-"]')) { ev.preventDefault(); addEntry('pnote'); }
+  }
+});
+
+/* ---------- início ---------- */
+async function boot() {
+  let db = null;
+  if (window.claude?.use) { try { db = await window.claude.use('db'); } catch { db = null; } }
+  store = db ? dbStore(db) : localStore();
+  let worldsReady = false, campsReady = false, creating = false;
+  const done = () => { if (worldsReady && campsReady) st.ready = true; render(); };
+  store.listen('worlds', async (docs, meta) => {
+    st.worlds = docs;
+    if (!docs.length && !meta?.fromCache && !creating) { creating = true; await save('worlds', 'ethru', {name: 'Ethrü', desc: 'O mundo criado entre amigos, inspirado inicialmente em D&D.', createdAt: nowIso()}); return; }
+    if (docs.length) worldsReady = true;
+    if (st.screen === 'world' && !docs.some(w => w.id === st.wid) && !meta?.fromCache) goPicker();
+    done();
+  }, () => { worldsReady = true; done(); });
+  store.listen('campaigns', (docs, meta) => {
+    st.campaigns = docs; campsReady = true;
+    if (st.screen === 'campaign') {
+      if (!docs.some(c => c.id === st.cid) && !meta?.fromCache) return goPicker();
+      const w = worldOf(curCamp()); if (w && w.id !== st.wid) subWorld(w.id);
+    }
+    done();
+  }, () => { campsReady = true; done(); });
+  render();
+}
+render(); renderDice(); boot();
+
+</script>
+
+</body>
+</html>
