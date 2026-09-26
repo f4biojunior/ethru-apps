@@ -343,13 +343,41 @@ function localStore() {
   const arr = p => Object.entries(data[p] || {}).map(([id, d]) => ({id, ...d}));
   const persist = () => lsSet(KEY, JSON.stringify(data));
   const emit = p => (L[p] || []).forEach(cb => cb(arr(p), {}));
+  let gone = new Set(); try { gone = new Set(JSON.parse(lsGet('grimorio-apagados') || '[]')); } catch {}
   return {
     mode: 'local',
+    /* mescla um documento publicado sem apagar edições locais mais novas */
+    merge(p, id, d) {
+      if (gone.has(p + '/' + id)) return false;
+      const cur = data[p]?.[id], t = x => String(x?.updatedAt || x?.createdAt || '');
+      if (cur && t(cur) >= t(d)) return false;
+      (data[p] = data[p] || {})[id] = clone(d); return true;
+    },
+    flush() { persist(); },
     listen(p, cb) { (L[p] = L[p] || []).push(cb); setTimeout(() => cb(arr(p), {})); return () => { L[p] = (L[p] || []).filter(x => x !== cb); }; },
     async list(p) { return arr(p); },
     async put(p, id, d) { (data[p] = data[p] || {})[id] = clone(d); if (!persist()) throw {code: 'quota_exceeded'}; emit(p); },
-    async del(p, id) { if (data[p]) { delete data[p][id]; persist(); emit(p); } }
+    async del(p, id) { if (data[p]) { delete data[p][id]; gone.add(p + '/' + id); lsSet('grimorio-apagados', JSON.stringify([...gone])); persist(); emit(p); } }
   };
+}
+/* dados publicados junto com o app (pasta data/ do repositório) */
+async function loadPublished() {
+  if (store.mode !== 'local' || !/^https?:$/.test(location.protocol)) return;
+  let data;
+  try { const r = await fetch('../data/grimorio.json', {cache: 'no-cache'}); if (!r.ok) return; data = await r.json(); } catch { return; }
+  if (data?.app !== 'grimorio') return;
+  const strip2 = d => { const c = clone(d); delete c.id; return c; };
+  for (const e of data.worlds || []) {
+    const w = e.world; if (!w?.id) continue;
+    store.merge('worlds', w.id, strip2(w));
+    for (const k of ['places', 'lore']) for (const d of e[k] || []) store.merge(`worlds/${w.id}/${k}`, d.id, strip2(d));
+  }
+  for (const e of data.campaigns || []) {
+    const c = e.campaign; if (!c?.id) continue;
+    store.merge('campaigns', c.id, strip2(c));
+    for (const k of ['npcs', 'sessions', 'notes', 'placeNotes']) for (const d of e[k] || []) store.merge(`campaigns/${c.id}/${k}`, d.id, strip2(d));
+  }
+  store.flush(); st.published = data.exportedAt;
 }
 function dbStore(db) {
   return {
@@ -669,7 +697,7 @@ function placesFiltered() {
 function mapSrc(w) {
   if (!w) return null;
   if (store?.mode === 'db') return w.mapAsset ? '/_blob/' + w.mapAsset : null;
-  return lsGet('grimorio-mapa-' + w.id);
+  return lsGet('grimorio-mapa-' + w.id) || (w.mapFile && /^https?:$/.test(location.protocol) ? '../' + w.mapFile : null);
 }
 
 /* ---------- renderização ---------- */
@@ -724,7 +752,9 @@ function renderBar() {
   }
   const mode = !store ? '' : store.mode === 'db'
     ? '<span class="mode" title="Os dados ficam salvos na sua conta e aparecem em qualquer dispositivo"><i></i>Salvo na nuvem</span>'
-    : '<span class="mode local" title="Os dados ficam só neste navegador. Use Exportar para fazer backup."><i></i>Salvo neste navegador</span>';
+    : st.published
+      ? `<span class="mode local" title="Os dados publicados no repositório foram carregados. O que você mudar aqui fica salvo só neste navegador."><i></i>Dados publicados em ${fmtDate(st.published)} · edições ficam neste navegador</span>`
+      : '<span class="mode local" title="Os dados ficam só neste navegador. Use Exportar para fazer backup."><i></i>Salvo neste navegador</span>';
   swap($('#bar'), `<div class="brand">${D20}<span>Grimório</span></div>${ctx}
     <div class="bar-actions">${mode}
       ${store ? `<button class="btn small ghost" data-act="export" title="Baixar backup em JSON">⭳<span> Exportar</span></button><button class="btn small ghost" data-act="import" title="Importar backup JSON">⭱<span> Importar</span></button>` : ''}
@@ -1469,6 +1499,7 @@ async function boot() {
   let db = null;
   if (window.claude?.use) { try { db = await window.claude.use('db'); } catch { db = null; } }
   store = db ? dbStore(db) : localStore();
+  await loadPublished();
   let worldsReady = false, campsReady = false, creating = false;
   const done = () => { if (worldsReady && campsReady) st.ready = true; render(); };
   store.listen('worlds', async (docs, meta) => {

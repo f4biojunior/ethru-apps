@@ -16,9 +16,18 @@ Assistente para mestre e jogadores durante as sessões.
 
 ### Como usar
 
-Abra `grimorio/index.html` no navegador ou pelo GitHub Pages. Tudo funciona offline, sem instalar nada.
+Abra o app pelo GitHub Pages. Tudo funciona no navegador, sem instalar nada.
 
-Os dados ficam salvos **no navegador** de quem usa. Para levar os dados para outro computador ou fazer backup, use **Exportar** e **Importar**.
+### De onde vêm os dados
+
+- **`data/grimorio.json`** guarda os dados publicados: o mundo de Ethrü, as localidades, o lore e as campanhas.
+- **`data/mapa-ethru.jpg`** é o mapa de Ethrü.
+
+Esses arquivos são uma cópia do Grimório principal, que fica no Claude. Quando alguém abre o app pelo GitHub, esses dados são carregados automaticamente.
+
+Quem editar alguma coisa pelo GitHub tem as edições salvas **só no próprio navegador**, e elas não somem quando os dados publicados são atualizados. Para mandar edições de volta para o Grimório principal, use **Exportar** e depois **Importar**.
+
+Os dados publicados só carregam quando o app é aberto por um endereço web (GitHub Pages ou um servidor local). Abrindo o arquivo direto do disco, o app começa vazio.
 
 ### Publicar com GitHub Pages
 
