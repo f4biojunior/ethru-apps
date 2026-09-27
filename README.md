@@ -27,6 +27,8 @@ Abra o app pelo GitHub Pages: https://f4biojunior.github.io/ethru-apps/
 
 As eras e os eventos vêm da planilha da TimelineJS de Ethrü. Para trocar a planilha, edite o mundo e cole o link novo em **Linha do tempo**. O app lê a planilha sempre que abre. Se não conseguir, usa a cópia em `data/linha-do-tempo.json`.
 
+O GitHub Actions (`.github/workflows/atualizar-linha-do-tempo.yml`) relê a planilha **a cada hora** e só atualiza `data/linha-do-tempo.json` quando alguma coisa mudou. No app, o botão **↻ Atualizar datas** (no mapa) ou **↻ Atualizar eras** (no lore) busca as datas na hora. Com o app aberto, ele também se atualiza sozinho a cada hora.
+
 No mapa, o seletor **Período** mostra só os lugares que existiam na era, no evento ou no ano escolhido. As setas ◀ ▶ passam de um evento para o outro. Um lugar usa os campos *Existe desde* e *Deixou de existir em*, e lugares sem data aparecem sempre.
 
 ### Backup automático
