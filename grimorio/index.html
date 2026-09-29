@@ -1095,7 +1095,7 @@ function viewMap() {
         <button class="btn small ghost" data-act="lod" title="Quando ligado, lugares menores só aparecem ao aproximar">${st.lod ? 'Detalhe pelo zoom: ligado' : 'Mostrando todos os lugares'}</button>
         <span class="spacer"></span>
         <button class="btn small primary" data-act="place-new">+ Localidade no mapa</button>
-        <button class="btn small quest-btn" data-act="quest-new">! Quest no mapa</button>
+        <button class="btn small quest-btn" data-act="quest-new">+Quest</button>
         <button class="btn small ghost" data-act="map-upload">Trocar mapa</button></div>
       ${whenBarHtml(w, placed.length, allPlaced.length, undated)}
       ${pl ? `<div class="placing-bar" role="status"><span>Clique no mapa para posicionar <b>${esc(placingName)}</b>. Você ainda pode arrastar e dar zoom para achar o ponto.</span><button class="btn small" data-act="place-cancel">Cancelar</button></div>` : ''}
