@@ -47,7 +47,7 @@ p{margin:0}
 
 /* modo leitura (Firebase sem permissão) */
 body.ro .adder, body.ro .camp-new, body.ro [data-act^="new-"], body.ro [data-act^="edit-"], body.ro [data-act="del"],
-body.ro [data-act="place-new"], body.ro [data-act="place-set"], body.ro [data-act="map-upload"], body.ro [data-act="sample"],
+body.ro [data-act="place-new"], body.ro [data-act="place-set"], body.ro [data-act="quest-new"], body.ro [data-act="quest-set"], body.ro [data-act="quest-unset"], body.ro [data-act="map-upload"], body.ro [data-act="sample"],
 body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [data-act="import"], body.ro .world-note-edit{display:none!important}
 .who{font-size:13px;color:var(--muted);max-width:18ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* barra superior */
@@ -276,6 +276,12 @@ body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [dat
 .pin.t-ruina .mk::after{content:"";position:absolute;inset:2px 2.5px 1.5px;background:#4d4d4d;clip-path:polygon(50% 0,100% 100%,0 100%)}
 .pin.t-natureza .mk{background:transparent;border:2.5px solid #2E7D3A;box-shadow:0 0 0 1.5px #fff,0 1px 4px rgba(0,0,0,.6)}
 .pin.t-regiao .mk{display:none}
+.pin.t-quest .mk{width:17px;height:17px;background:#F2C230;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 1px 5px rgba(0,0,0,.6);position:relative}
+.pin.t-quest .mk::after{content:"!";position:absolute;inset:0;display:grid;place-items:center;font:900 12px/1 var(--sans);color:#3A2A00}
+.pin.t-quest .lb{color:#FFE9A8}
+.pin.t-quest.sel .mk{outline:3px solid #fff;outline-offset:2px}
+.quest-btn{background:#F2C230;border-color:#D9A916;color:#3A2A00;font-weight:700}
+.quest-btn:hover{border-color:#3A2A00}
 .pin.t-regiao .lb{position:static;transform:none;font-family:var(--serif);font-style:italic;font-size:16px;letter-spacing:.12em;text-transform:uppercase;display:block!important}
 .pin.sel .mk{outline:3px solid #F2C94C;outline-offset:2px}
 .pin.sel .lb{color:#FFE9A8}
@@ -349,7 +355,7 @@ const DISP = {aliado:'Aliado', neutro:'Neutro', hostil:'Hostil', desconhecido:'D
 const STATUS = {vivo:'Vivo', morto:'Morto', desaparecido:'Desaparecido', desconhecido:'Desconhecido'};
 const KINDS = ['NPC', 'Personagem jogador', 'Divindade', 'Criatura', 'Facção', 'Outro'];
 const NOTE_CATS = ['Missão', 'Local', 'Item', 'Facção', 'Lore', 'Regra', 'Outro'];
-const LORE_CATS = ['História', 'Personagens', 'Divindades', 'Facções', 'Povos e raças', 'Idiomas', 'Magia', 'Criaturas', 'Calendário', 'Outro'];
+const LORE_CATS = ['História', 'Personagens', 'Quest', 'Divindades', 'Facções', 'Povos e raças', 'Idiomas', 'Magia', 'Criaturas', 'Calendário', 'Outro'];
 const SYSTEMS = ['D&D 5e', 'D&D 2024', 'Dungeon World', 'Pathfinder 2e', 'Tormenta20', 'Old Dragon', 'Call of Cthulhu', 'Vampiro: A Máscara', 'Sistema próprio'];
 /* tipo de localidade -> classe do marcador no mapa */
 const PLACE_TYPES = [
@@ -445,7 +451,7 @@ const st = {
   sel: {npcs: null, sessions: null, notes: null, places: null, lore: null},
   q: {npcs: '', sessions: '', notes: '', places: '', lore: ''},
   fDisp: '', fStatus: '', fCat: '', fType: '', fLore: '', fPeriod: '', loreSort: 'cat', npcSort: 'nome',
-  placing: null, view: {}, labels: lsGet('grimorio-rotulos') !== '0', lod: lsGet('grimorio-lod') !== '0', mapDims: {}, mapWhen: null,
+  placing: null, view: {}, labels: lsGet('grimorio-rotulos') !== '0', lod: lsGet('grimorio-lod') !== '0', mapDims: {}, mapWhen: null, mapQuest: null,
   confirm: null,
   dice: {open: false, expr: '1d20', last: null, err: '', hist: []}
 };
@@ -726,7 +732,7 @@ function loreForm(n, preset) {
     intro: 'O lore pertence ao mundo e fica disponível em todas as campanhas que se passam nele.',
     fields: [
       {id: 'title', label: 'Título', value: n?.title, required: true, full: true},
-      {id: 'cat', label: 'Categoria', type: 'select', value: n?.cat ?? (st.fLore || 'História'), options: LORE_CATS.map(c => [c, c])},
+      {id: 'cat', label: 'Categoria', type: 'select', value: n?.cat ?? preset?.cat ?? (st.fLore || 'História'), options: LORE_CATS.map(c => [c, c])},
       {id: 'period', label: 'Período da história', value: n?.period ?? st.fPeriod, ph: 'Escolha uma era ou escreva', list: uniq([...eraNames(curWorld()), ...st.lore.map(x => x.period)])},
       {id: 'yearFrom', label: 'Ano ou início (opcional)', value: n?.yearFrom, ph: 'Ex.: 212'},
       {id: 'yearTo', label: 'Até o ano, se durou (opcional)', value: n?.yearTo, ph: 'Ex.: 350'},
@@ -736,8 +742,9 @@ function loreForm(n, preset) {
     onSubmit: async v => {
       if (!v.title) { toast('Dê um título.'); return false; }
       const id = n?.id || uid();
-      const ok = await save(wsub('lore'), id, {...(n ? strip(n) : {createdAt: nowIso()}), ...v, updatedAt: nowIso()});
-      if (ok) st.sel.lore = id;
+      const base = n ? strip(n) : {createdAt: nowIso(), ...(preset?.x != null ? {x: preset.x, y: preset.y} : {})};
+      const ok = await save(wsub('lore'), id, {...base, ...v, updatedAt: nowIso()});
+      if (ok) { st.sel.lore = id; if (v.cat === 'Quest' && base.x != null) { st.mapQuest = id; st.sel.places = null; } }
       return ok;
     }
   });
@@ -1039,8 +1046,22 @@ function worldBody() { return {mapa: viewMap, locais: viewPlaces, lore: viewLore
 function pinHtml(p) {
   return `<button class="pin ${pinClass(p.type)}${p.id === st.sel.places ? ' sel' : ''}" data-tier="${tierOf(p)}" style="left:${+p.x}%;top:${+p.y}%" data-act="pin" data-id="${esc(p.id)}" title="${esc(p.name)} · ${esc(p.type)}"><span class="mk"></span><span class="lb">${esc(p.name)}</span></button>`;
 }
+function questPinHtml(q) {
+  return `<button class="pin t-quest${q.id === st.mapQuest ? ' sel' : ''}" data-tier="1" style="left:${+q.x}%;top:${+q.y}%" data-act="qpin" data-id="${esc(q.id)}" title="Quest: ${esc(q.title)}"><span class="mk"></span><span class="lb">${esc(q.title)}</span></button>`;
+}
+function questDetail(q) {
+  const places = lorePlaces(q);
+  return `<article class="detail">
+    <div class="detail-head"><div><p class="eyebrow" style="color:var(--gold)">Quest${periodLabel(q) ? ' · ' + esc(periodLabel(q)) : ''}</p><h2>${esc(q.title)}</h2></div>
+      <div class="actions"><button class="btn small" data-act="edit-lore">Editar</button><button class="btn small ghost" data-act="quest-set" data-id="${esc(q.id)}">Mover no mapa</button><button class="btn small ghost" data-act="quest-unset" data-id="${esc(q.id)}">Tirar do mapa</button></div></div>
+    <p class="prose" style="margin-top:18px">${esc(q.body) || '<span style="color:var(--muted)">Sem texto.</span>'}</p>
+    ${places.length ? `<div class="section-h"><h3>Lugares relacionados</h3><small>${places.length}</small></div>
+      <div class="people">${places.map(p => `<button class="person" data-act="goto-place-map" data-id="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>` : ''}
+    <p class="shared-hint"><button class="link" data-act="goto-lore" data-id="${esc(q.id)}">Abrir no lore</button></p>
+  </article>`;
+}
 function legendHtml() {
-  const L = [['Capital', 'capital'], ['Cidade', 'cidade'], ['Vila', 'vila'], ['Vilarejo', 'vilarejo'], ['Castelo / fortaleza', 'forte'], ['Templo', 'templo'], ['Ruína / masmorra', 'ruina'], ['Natureza', 'natureza']];
+  const L = [['Capital', 'capital'], ['Cidade', 'cidade'], ['Vila', 'vila'], ['Vilarejo', 'vilarejo'], ['Castelo / fortaleza', 'forte'], ['Templo', 'templo'], ['Ruína / masmorra', 'ruina'], ['Natureza', 'natureza'], ['Quest', 'quest']];
   return `<div class="legend">${L.map(([l, c]) => `<span><span class="pin t-${c}"><span class="mk"></span></span>${l}</span>`).join('')}</div>`;
 }
 
@@ -1055,7 +1076,9 @@ function viewMap() {
   const dims = mapDimsOf(w);
   const v = st.view[w.id];
   const pl = st.placing;
-  const placingName = pl ? (pl.id ? st.places.find(p => p.id === pl.id)?.name : 'a nova localidade') : '';
+  const placingName = !pl ? '' : pl.id ? st.places.find(p => p.id === pl.id)?.name : pl.quest ? 'a quest ' + (st.lore.find(l => l.id === pl.quest)?.title || '') : pl.newQuest ? 'a nova quest' : 'a nova localidade';
+  const quests = st.lore.filter(l => l.cat === 'Quest' && l.x != null && l.x !== '' && (loreInWindow(l, win) || l.id === st.mapQuest));
+  const selQ = st.lore.find(l => l.id === st.mapQuest && l.cat === 'Quest');
   let map;
   if (!src && w.mapChunks) {
     map = `<div class="map-empty"><h3>Carregando o mapa de ${esc(w.name)}…</h3></div>`;
@@ -1072,13 +1095,14 @@ function viewMap() {
         <button class="btn small ghost" data-act="lod" title="Quando ligado, lugares menores só aparecem ao aproximar">${st.lod ? 'Detalhe pelo zoom: ligado' : 'Mostrando todos os lugares'}</button>
         <span class="spacer"></span>
         <button class="btn small primary" data-act="place-new">+ Localidade no mapa</button>
+        <button class="btn small quest-btn" data-act="quest-new">! Quest no mapa</button>
         <button class="btn small ghost" data-act="map-upload">Trocar mapa</button></div>
       ${whenBarHtml(w, placed.length, allPlaced.length, undated)}
       ${pl ? `<div class="placing-bar" role="status"><span>Clique no mapa para posicionar <b>${esc(placingName)}</b>. Você ainda pode arrastar e dar zoom para achar o ponto.</span><button class="btn small" data-act="place-cancel">Cancelar</button></div>` : ''}
       <div class="map-view${pl ? ' placing' : ''}${st.labels ? '' : ' nolabels'}" id="map-view" tabindex="0" aria-label="Mapa de ${esc(w.name)}. Setas movem, mais e menos dão zoom, zero enquadra.">
         <div class="map-canvas" id="map-canvas" style="${cs}">
           <img id="map-img" src="${esc(src)}" alt="" draggable="false">
-          ${placed.map(pinHtml).join('')}
+          ${placed.map(pinHtml).join('')}${quests.map(questPinHtml).join('')}
         </div>
         <div class="map-ctl zoom-btns">
           <button type="button" data-act="mz" data-z="in" aria-label="Aproximar">+</button>
@@ -1097,7 +1121,7 @@ function viewMap() {
       ${legendHtml()}
       ${unplaced.length ? `<div class="unplaced">Ainda sem posição no mapa (clique para marcar):<div class="people">${unplaced.map(p => `<button class="person" data-act="place-set" data-id="${esc(p.id)}">${esc(p.name)} <span class="type-badge">${esc(p.type)}</span></button>`).join('')}</div></div>` : ''}`;
   }
-  const side = sel ? placeDetail(sel, true)
+  const side = selQ ? questDetail(selQ) : sel ? placeDetail(sel, true)
     : `<div class="side-empty"><h3>${placed.length ? 'Escolha um lugar no mapa' : 'Nenhum lugar marcado'}</h3><p>${src ? 'Clique em um marcador para ver a ficha do lugar. Use <b>+ Localidade no mapa</b> para cadastrar e marcar ao mesmo tempo.' : 'Depois de enviar o mapa, os lugares aparecem aqui.'}</p></div>`;
   return `<div class="map-layout"><section class="pane">${map}</section><section class="pane">${side}</section></div>`;
 }
@@ -1223,7 +1247,7 @@ function viewLore() {
     <section class="pane detail-pane">${sel ? `<button class="btn small ghost back" data-act="back">← Lore</button>
       <article class="detail"><div class="detail-head"><div><p class="eyebrow">${esc(sel.cat)}</p><h2>${esc(sel.title)}</h2>
         ${periodLabel(sel) ? `<p class="epithet">${esc(periodLabel(sel))}</p>` : ''}</div>
-        <div class="actions"><button class="btn small" data-act="edit-lore">Editar</button>${confirmBtn('lore:' + sel.id)}</div></div>
+        <div class="actions">${sel.cat === 'Quest' ? (sel.x != null && sel.x !== '' ? `<button class="btn small ghost" data-act="goto-quest-map" data-id="${esc(sel.id)}">Ver no mapa</button><button class="btn small ghost" data-act="quest-set" data-id="${esc(sel.id)}">Mover no mapa</button>` : mapSrc(curWorld()) ? `<button class="btn small ghost" data-act="quest-set" data-id="${esc(sel.id)}">Marcar no mapa</button>` : '') : ''}<button class="btn small" data-act="edit-lore">Editar</button>${confirmBtn('lore:' + sel.id)}</div></div>
         <p class="prose" style="margin-top:18px">${esc(sel.body) || '<span style="color:var(--muted)">Sem texto.</span>'}</p>
         ${lorePlaces(sel).length ? `<div class="section-h"><h3>Lugares relacionados</h3><small>${lorePlaces(sel).length}</small></div>
           <div class="people">${lorePlaces(sel).map(p => `<button class="person" data-act="goto-place-map" data-id="${esc(p.id)}" title="Ver no mapa"><span class="pin ${pinClass(p.type)}" style="position:static;transform:none;pointer-events:none"><span class="mk"></span></span>${esc(p.name)}</button>`).join('')}</div>` : ''}
@@ -1455,6 +1479,12 @@ async function placeAt(ev) {
   const x = +(((ev.clientX - r.left) / r.width) * 100).toFixed(2), y = +(((ev.clientY - r.top) / r.height) * 100).toFixed(2);
   if (x < 0 || x > 100 || y < 0 || y > 100) return toast('Clique dentro da imagem do mapa.');
   const pl = st.placing; st.placing = null;
+  if (pl.quest) {
+    const q = st.lore.find(l => l.id === pl.quest);
+    if (q && await save(wsub('lore'), q.id, {...strip(q), x, y, updatedAt: nowIso()})) { st.mapQuest = q.id; st.sel.lore = q.id; st.sel.places = null; toast(`Quest "${q.title}" marcada no mapa.`); }
+    return render();
+  }
+  if (pl.newQuest) { render(); return loreForm(null, {cat: 'Quest', x, y}); }
   if (pl.id) {
     const p = st.places.find(q => q.id === pl.id);
     if (p && await save(wsub('places'), p.id, {...strip(p), x, y, updatedAt: nowIso()})) { st.sel.places = p.id; toast(`${p.name} marcado no mapa.`); }
@@ -1664,14 +1694,14 @@ function gotoPlace(id, onMap) {
   const fromWorld = st.screen === 'world' || st.tab === 'world';
   if (inCampaign()) st.tab = 'world';
   st.wtab = onMap || (fromWorld && st.wtab === 'mapa') ? 'mapa' : 'locais';
-  st.sel.places = id; window.scrollTo(0, 0); render();
+  st.sel.places = id; st.mapQuest = null; window.scrollTo(0, 0); render();
   if (st.wtab === 'mapa') { const p = st.places.find(x => x.id === id); if (p) requestAnimationFrame(() => centerOn(p)); }
 }
 
 document.addEventListener('click', async ev => {
   if (st.placing && ev.target.closest?.('#map-canvas') && !ev.target.closest('[data-act="pin"]')) { ev.preventDefault(); return placeAt(ev); }
   if (!st.placing && ev.target.closest?.('#map-view') && !ev.target.closest('.pin, .map-ctl')) {
-    if (st.sel.places) { st.sel.places = null; st.confirm = null; render(); }
+    if (st.sel.places || st.mapQuest) { st.sel.places = null; st.mapQuest = null; st.confirm = null; render(); }
     return;
   }
   const b = ev.target.closest('[data-act]'); if (!b) return;
@@ -1718,7 +1748,12 @@ document.addEventListener('click', async ev => {
   if (act === 'goto-lore') { if (inCampaign()) st.tab = 'world'; st.wtab = 'lore'; st.sel.lore = b.dataset.id; st.fLore = ''; st.fPeriod = ''; st.q.lore = ''; window.scrollTo(0, 0); return render(); }
   if (act === 'new-lore-here') return loreForm(null, {places: [b.dataset.id]});
   if (act === 'show-on-map') return gotoPlace(st.sel.places, true);
-  if (act === 'pin') { st.sel.places = b.dataset.id; st.confirm = null; return render(); }
+  if (act === 'pin') { st.sel.places = b.dataset.id; st.mapQuest = null; st.confirm = null; return render(); }
+  if (act === 'qpin') { st.mapQuest = b.dataset.id; st.sel.lore = b.dataset.id; st.sel.places = null; st.confirm = null; return render(); }
+  if (act === 'quest-new') { st.placing = {newQuest: true}; return render(); }
+  if (act === 'quest-set') { if (inCampaign()) st.tab = 'world'; st.wtab = 'mapa'; st.placing = {quest: b.dataset.id}; st.mapQuest = b.dataset.id; st.sel.places = null; window.scrollTo(0, 0); return render(); }
+  if (act === 'quest-unset') { const q = st.lore.find(l => l.id === b.dataset.id); if (q) { await save(wsub('lore'), q.id, {...strip(q), x: null, y: null, updatedAt: nowIso()}); st.mapQuest = null; } return render(); }
+  if (act === 'goto-quest-map') { const q = st.lore.find(l => l.id === b.dataset.id); if (!q) return; if (inCampaign()) st.tab = 'world'; st.wtab = 'mapa'; st.mapQuest = q.id; st.sel.lore = q.id; st.sel.places = null; window.scrollTo(0, 0); render(); return requestAnimationFrame(() => centerOn(q)); }
   if (act === 'goto-session') { const s = st.sessions.find(x => String(x.num) === String(b.dataset.num)); if (s) { st.tab = 'sessions'; st.sel.sessions = s.id; window.scrollTo(0, 0); render(); } else toast('Essa sessão não está registrada.'); return; }
   if (act === 'map-upload') return $('#map-file').click();
   if (act === 'mz') { const z = b.dataset.z; if (z === 'in') zoomAt(1.5); else if (z === 'out') zoomAt(1 / 1.5); else if (z === 'fit') fitView();
