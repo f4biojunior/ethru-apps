@@ -251,6 +251,8 @@ body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [dat
 .map-ctl button{width:36px;height:36px;border-radius:8px;border:1px solid rgba(0,0,0,.25);background:rgba(251,252,252,.94);color:#17211F;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.35);display:grid;place-items:center;padding:0}
 .map-ctl button:hover{background:#fff}
 .zoom-btns{top:10px;right:10px}
+.compass{position:absolute;right:10px;bottom:10px;width:64px;height:64px;z-index:2;pointer-events:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+.compass svg{width:100%;height:100%;display:block}
 .dpad{bottom:10px;left:10px;grid-template-columns:repeat(3,32px);grid-template-rows:repeat(3,32px)}
 .dpad button{width:32px;height:32px;font-size:12px}
 .dpad .up{grid-area:1/2}.dpad .left{grid-area:2/1}.dpad .mid{grid-area:2/2;font-size:10px}.dpad .right{grid-area:2/3}.dpad .down{grid-area:3/2}
@@ -1109,6 +1111,15 @@ function viewMap() {
           <button type="button" data-act="mz" data-z="out" aria-label="Afastar">−</button>
           <button type="button" data-act="mz" data-z="fit" aria-label="Enquadrar o mapa inteiro" title="Enquadrar o mapa inteiro">⤢</button>
         </div>
+        <div class="compass" aria-hidden="true"><svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="30" fill="rgba(251,252,252,.9)" stroke="#17211F" stroke-width="1.5"/>
+          <circle cx="50" cy="50" r="24" fill="none" stroke="#17211F" stroke-width=".8" stroke-dasharray="2 2.5"/>
+          <path d="M50 22 L55 45 L78 50 L55 55 L50 78 L45 55 L22 50 L45 45 Z" fill="#fff" stroke="#17211F" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M50 22 L55 45 L50 50 Z M78 50 L55 55 L50 50 Z M50 78 L45 55 L50 50 Z M22 50 L45 45 L50 50 Z" fill="#17211F"/>
+          <circle cx="50" cy="50" r="2.5" fill="#fff" stroke="#17211F" stroke-width="1.2"/>
+          <g font-family="Alegreya, Georgia, serif" font-weight="700" font-size="13" text-anchor="middle" fill="#17211F" stroke="#fff" stroke-width="3" paint-order="stroke">
+            <text x="50" y="12">N</text><text x="50" y="98">S</text><text x="93" y="54.5">L</text><text x="7" y="54.5">O</text>
+          </g></svg></div>
         <div class="map-ctl dpad" aria-label="Mover o mapa">
           <button type="button" class="up" data-act="mpan" data-dx="0" data-dy="1" aria-label="Mover para cima">▲</button>
           <button type="button" class="left" data-act="mpan" data-dx="1" data-dy="0" aria-label="Mover para a esquerda">◀</button>
