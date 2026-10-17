@@ -175,6 +175,10 @@ body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [dat
 .field textarea{min-height:96px;resize:vertical}
 .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 
+/* eventos do lore */
+.adder select[id^="levt-w-"]{flex:1 1 200px;max-width:340px;min-width:0}
+.levt-year{width:90px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 10px}
+.levt-when{font-weight:700;color:var(--ink)}
 /* período no mapa */
 .when-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
 .when-label{font-size:14px;color:var(--muted);font-weight:700}
@@ -810,7 +814,7 @@ function tabsHtml(defs, cur, act = 'tab') {
     `<button class="tab" role="tab" aria-selected="${cur === k}" data-act="${act}" data-tab="${k}">${l}${n != null ? `<small>${n}</small>` : ''}</button>`).join('')}</nav>`;
 }
 
-function render() { renderMain(); initMapView(); }
+function render() { renderMain(); initMapView(); document.querySelectorAll('select[id^="levt-w-"]').forEach(s => { const yi = document.getElementById('levt-y-' + s.id.slice(7)); if (yi) yi.hidden = s.value !== 'ano'; }); }
 function renderMain() {
   renderBar();
   const main = $('#main');
@@ -1225,6 +1229,43 @@ function setLoreYearLabels(cat) {
 }
 const lorePlaces = n => (n.places || []).map(id => st.places.find(p => p.id === id)).filter(Boolean);
 const loreOfPlace = p => st.lore.filter(l => (l.places || []).includes(p.id)).sort((a, b) => (yearNum(a.yearFrom) ?? 1e9) - (yearNum(b.yearFrom) ?? 1e9) || byName(a, b));
+/* eventos de um item do lore: data por era/evento da linha do tempo ou por ano digitado */
+function eventWhenLabel(e) {
+  const yrs = e.year == null ? '' : e.yearTo != null && e.yearTo !== e.year ? `${e.year}–${e.yearTo}` : `ano ${e.year}`;
+  return e.period ? `${e.period}${yrs ? ' (' + yrs + ')' : ''}` : yrs ? yrs[0].toUpperCase() + yrs.slice(1) : 'Sem data';
+}
+function readEventWhen(id) {
+  const s = document.getElementById('levt-w-' + id)?.value || 'ano', yi = document.getElementById('levt-y-' + id);
+  if (s === 'ano') {
+    const raw = (yi?.value || '').trim(); if (!raw) return {period: '', year: null, yearTo: null};
+    const y = yearNum(raw); if (y == null) { toast('Digite o ano só com números, por exemplo 512 ou -300.'); yi?.focus(); return false; }
+    return {period: '', year: y, yearTo: null};
+  }
+  const tl = timelineOf(curWorld()); const [k, i] = s.split(':'); const it = tl?.[k === 'era' ? 'eras' : 'events']?.[+i];
+  return it ? {period: it.headline, periodKind: k === 'era' ? 'era' : 'evento', year: it.year, yearTo: it.endYear} : {period: '', year: null, yearTo: null};
+}
+function loreEventsHtml(l) {
+  const evs = [...(l.events || [])].sort((a, b) => (a.year ?? 1e9) - (b.year ?? 1e9) || String(a.at).localeCompare(String(b.at)));
+  const tl = timelineOf(curWorld());
+  const span = it => it.display || (it.year === it.endYear ? `${it.year}` : `${it.year} a ${it.endYear}`);
+  return `<div class="section-h"><h3>Eventos</h3><small>${evs.length}</small></div>
+    <p class="world-note">O que aconteceu com ${esc(l.title)} ao longo da história.</p>
+    <form class="adder" data-form="lore-event">
+      <textarea id="levt-${esc(l.id)}" data-keep placeholder="Ex.: foi perdido na queda de Highcrest e reapareceu nas mãos de um mercador…"></textarea>
+      <div class="row">
+        <select id="levt-w-${esc(l.id)}" data-keep aria-label="Quando aconteceu">
+          <option value="ano">Ano específico →</option>
+          ${tl?.eras.length ? `<optgroup label="Eras">${tl.eras.map((e, i) => `<option value="era:${i}">${esc(e.headline)} (${esc(span(e))})</option>`).join('')}</optgroup>` : ''}
+          ${tl?.events.length ? `<optgroup label="Eventos da linha do tempo">${tl.events.map((e, i) => `<option value="ev:${i}">${esc(span(e))} · ${esc(e.headline)}</option>`).join('')}</optgroup>` : ''}
+        </select>
+        <input id="levt-y-${esc(l.id)}" data-keep class="levt-year" type="text" inputmode="numeric" placeholder="ano" aria-label="Ano do evento">
+        <span class="hint">Ctrl+Enter para registrar</span><button class="btn primary">Registrar</button>
+      </div>
+    </form>
+    ${evs.length ? `<ol class="timeline">${evs.map(e => `<li>
+      <div class="tl-meta"><span class="levt-when">${esc(eventWhenLabel(e))}</span>${confirmBtn('levt:' + e.id, '×', 'x')}</div>
+      <p class="tl-text">${esc(e.text)}</p></li>`).join('')}</ol>` : ''}`;
+}
 /* período da história: texto livre + anos opcionais para ordenar */
 const yearNum = y => { const m = String(y ?? '').match(/-?\d+/); return m ? +m[0] : null; };
 function periodLabel(n) {
@@ -1262,6 +1303,7 @@ function viewLore() {
         <p class="prose" style="margin-top:18px">${esc(sel.body) || '<span style="color:var(--muted)">Sem texto.</span>'}</p>
         ${lorePlaces(sel).length ? `<div class="section-h"><h3>Lugares relacionados</h3><small>${lorePlaces(sel).length}</small></div>
           <div class="people">${lorePlaces(sel).map(p => `<button class="person" data-act="goto-place-map" data-id="${esc(p.id)}" title="Ver no mapa"><span class="pin ${pinClass(p.type)}" style="position:static;transform:none;pointer-events:none"><span class="mk"></span></span>${esc(p.name)}</button>`).join('')}</div>` : ''}
+        ${loreEventsHtml(sel)}
         <p class="shared-hint">Atualizado em ${fmtDate(sel.updatedAt)} · vale para todas as campanhas em ${esc(curWorld()?.name)}</p></article>`
       : '<div class="detail-empty">Escolha um registro de lore.</div>'}</section>
   </div>`;
@@ -1672,6 +1714,13 @@ async function addEntry(kind) {
     const p = st.places.find(x => x.id === st.sel.places); if (!p) return;
     const ta = document.getElementById('pentry-' + p.id), text = ta.value.trim(); if (!text) return ta.focus();
     if (await save(wsub('places'), p.id, {...strip(p), entries: [...clone(p.entries || []), {id: uid(), text, at: nowIso()}], updatedAt: nowIso()})) { ta.value = ''; ta.focus(); }
+  } else if (kind === 'levt') {
+    const l = st.lore.find(x => x.id === st.sel.lore); if (!l) return;
+    const ta = document.getElementById('levt-' + l.id), text = ta.value.trim(); if (!text) return ta.focus();
+    const when = readEventWhen(l.id); if (when === false) return;
+    if (await save(wsub('lore'), l.id, {...strip(l), events: [...clone(l.events || []), {id: uid(), text, ...when, at: nowIso()}], updatedAt: nowIso()})) {
+      ta.value = ''; const yi = document.getElementById('levt-y-' + l.id); if (yi) yi.value = ''; ta.focus();
+    }
   } else if (kind === 'pnote') {
     const p = st.places.find(x => x.id === st.sel.places); if (!p) return;
     const ta = document.getElementById('pnote-' + p.id), text = ta.value.trim(); if (!text) return ta.focus();
@@ -1697,6 +1746,7 @@ async function handleDelete(key) {
   else if (type === 'entry') { const n = st.npcs.find(x => x.id === st.sel.npcs); if (n) await save(sub('npcs'), n.id, {...strip(n), entries: (n.entries || []).filter(e => e.id !== id), updatedAt: nowIso()}); }
   else if (type === 'log') { const s = st.sessions.find(x => x.id === st.sel.sessions); if (s) await save(sub('sessions'), s.id, {...strip(s), log: (s.log || []).filter(l => l.id !== id)}); }
   else if (type === 'pentry') { const p = st.places.find(x => x.id === st.sel.places); if (p) await save(wsub('places'), p.id, {...strip(p), entries: (p.entries || []).filter(e => e.id !== id), updatedAt: nowIso()}); }
+  else if (type === 'levt') { const l = st.lore.find(x => x.id === st.sel.lore); if (l) await save(wsub('lore'), l.id, {...strip(l), events: (l.events || []).filter(e => e.id !== id), updatedAt: nowIso()}); }
   else if (type === 'pnote') { const pn = st.pnotes.find(x => x.id === st.sel.places); if (pn) await save(sub('placeNotes'), pn.id, {...strip(pn), entries: (pn.entries || []).filter(e => e.id !== id), updatedAt: nowIso()}); }
   render();
 }
@@ -1791,6 +1841,7 @@ document.addEventListener('submit', async ev => {
   else if (k === 'session-log') addEntry('log');
   else if (k === 'place-entry') addEntry('pentry');
   else if (k === 'place-note') addEntry('pnote');
+  else if (k === 'lore-event') addEntry('levt');
   else if (k === 'dice') doRoll($('#dice-expr').value);
 });
 
@@ -1801,6 +1852,7 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('change', ev => {
   if (ev.target.id === 'f-cat' && $('#f-yearFrom')) setLoreYearLabels(ev.target.value);
+  if (ev.target.id?.startsWith('levt-w-')) { const yi = document.getElementById('levt-y-' + ev.target.id.slice(7)); if (yi) { yi.hidden = ev.target.value !== 'ano'; if (!yi.hidden) yi.focus(); } }
   if (ev.target.id === 'map-when') { st.mapWhen = ev.target.value || null; render(); }
   if (ev.target.id === 'map-year') { const y = yearNum(ev.target.value); st.mapWhen = y == null ? null : 'ano:' + y; render(); }
   if (ev.target.id === 'f-period' && $('#f-yearFrom') && $('#f-cat')?.value !== 'Personagens') {
@@ -1830,6 +1882,7 @@ document.addEventListener('keydown', ev => {
     if (t.matches?.('textarea[id^="entry-"]')) { ev.preventDefault(); addEntry('npc'); }
     if (t.matches?.('textarea[id^="pentry-"]')) { ev.preventDefault(); addEntry('pentry'); }
     if (t.matches?.('textarea[id^="pnote-"]')) { ev.preventDefault(); addEntry('pnote'); }
+    if (t.matches?.('textarea[id^="levt-"]')) { ev.preventDefault(); addEntry('levt'); }
   }
 });
 
