@@ -210,6 +210,9 @@ body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [dat
 .recipe-steps li::before{content:counter(passo);position:absolute;left:0;top:-1px;font-family:var(--serif);font-weight:700;font-size:20px;color:var(--paper-accent);width:24px;text-align:right}
 .recipe-story{white-space:pre-wrap;font-family:var(--serif);font-size:17px;line-height:1.55}
 .recipe-story::first-letter{font-size:2.6em;float:left;line-height:.9;padding:4px 6px 0 0;color:var(--paper-accent);font-weight:700}
+.recipe-text{white-space:pre-wrap;overflow-wrap:anywhere}
+.gm-note{margin-top:20px;padding:12px 14px;border:1px dashed var(--paper-accent);border-radius:8px;background:var(--paper-2)}
+.gm-label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--paper-accent);margin-bottom:4px}
 .recipe-muted{color:var(--paper-muted);font-style:italic}
 .page-num{position:absolute;bottom:14px;font-family:var(--serif);font-size:14px;color:var(--paper-muted)}
 .page-l .page-num{left:36px}.page-r .page-num{right:36px}
@@ -788,6 +791,8 @@ function loreForm(n, preset) {
       {id: 'time', label: 'Tempo de preparo', value: n?.time, ph: 'Ex.: 1 hora', only: 'Receitas'},
       {id: 'ingredients', label: 'Ingredientes (um por linha)', type: 'textarea', value: n?.ingredients, full: true, ph: '2 punhados de cevada\n1 peixe do rio defumado\nSal de pedra', only: 'Receitas'},
       {id: 'steps', label: 'Modo de preparo (um passo por linha)', type: 'textarea', value: n?.steps, full: true, ph: 'Deixe a cevada de molho durante a noite.\nCozinhe com o peixe em fogo baixo.', only: 'Receitas'},
+      {id: 'realSubs', label: 'Substituições no mundo real', type: 'textarea', value: n?.realSubs, full: true, ph: 'Ex.: peixe de rio → tilápia; sal de pedra → sal grosso', only: 'Receitas'},
+      {id: 'gmNotes', label: 'Notas do mestre', type: 'textarea', value: n?.gmNotes, full: true, ph: 'Ex.: comer este caldo dá vantagem em testes contra frio por 1 dia', only: 'Receitas'},
       {id: 'places', label: 'Lugares relacionados no mapa', type: 'multi', full: true, value: n?.places ?? (preset?.places || []), options: placeOpts, empty: 'Nenhuma localidade cadastrada ainda.'},
       {id: 'body', label: 'Texto', type: 'textarea', value: n?.body, full: true}
     ],
@@ -1099,7 +1104,7 @@ const lines = s => String(s || '').split(/\n+/).map(x => x.replace(/^\s*(?:[-*�
 function recipesList() {
   const q = norm(st.q.recipes);
   return st.lore.filter(l => l.cat === 'Receitas' && (!st.fRegion || (l.places || []).includes(st.fRegion)) &&
-      (!q || norm([l.title, l.body, l.ingredients, l.steps, lorePlaces(l).map(p => p.name).join(' ')].join(' ')).includes(q)))
+      (!q || norm([l.title, l.body, l.ingredients, l.steps, l.realSubs, l.gmNotes, lorePlaces(l).map(p => p.name).join(' ')].join(' ')).includes(q)))
     .sort(byName);
 }
 function viewRecipes() {
@@ -1136,6 +1141,8 @@ function viewRecipes() {
         <h3 class="recipe-h">Modo de preparo</h3>
         ${steps.length ? `<ol class="recipe-steps">${steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : '<p class="recipe-muted">Sem modo de preparo anotado.</p>'}
         ${cur.body ? `<h3 class="recipe-h">História</h3><p class="recipe-story">${esc(cur.body)}</p>` : ''}
+        ${cur.realSubs ? `<h3 class="recipe-h">Substituições no mundo real</h3><p class="recipe-text">${esc(cur.realSubs)}</p>` : ''}
+        ${cur.gmNotes ? `<aside class="gm-note"><p class="gm-label">Notas do mestre</p><p class="recipe-text">${esc(cur.gmNotes)}</p></aside>` : ''}
         <span class="page-num">${idx * 2 + 2}</span>
       </div>
       <nav class="book-nav">
