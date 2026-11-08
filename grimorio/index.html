@@ -228,6 +228,13 @@ body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [dat
 .book-empty .page{min-height:0}
 .book-empty h2{font-family:var(--serif);font-size:30px;margin-bottom:10px}
 @media (max-width:860px){ .book-wrap{grid-template-columns:minmax(0,1fr)} .book{grid-template-columns:1fr} .book::before{display:none} .page-l{border-right:0;border-bottom:1px solid var(--paper-line)} .page{min-height:0;padding:24px 20px 40px} .page-l .page-num{left:20px}.page-r .page-num{right:20px} }
+.list-ctl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto) auto;gap:6px;margin-bottom:12px;align-items:center}
+.ctl{height:34px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:0 10px;font-size:14px;min-width:0;width:100%;cursor:pointer}
+.ctl:hover:not([disabled]){border-color:var(--accent)}
+.ctl[disabled]{opacity:.55;cursor:default}
+.ctl-icon{width:34px;padding:0;font-size:17px;display:grid;place-items:center}
+@keyframes girar{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:girar 1s linear infinite}
 /* período no mapa */
 .when-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
 .when-label{font-size:14px;color:var(--muted);font-weight:700}
@@ -1411,10 +1418,10 @@ function viewLore() {
   return `<div class="work${sel ? ' has-sel' : ''}">
     <section class="pane list-pane">${listHead('lore', 'Buscar no lore…', 'new-lore', '+ Novo')}
       <div class="chips">${chip('fLore', '', 'Tudo')}${cats.map(c => chip('fLore', c, c)).join('')}</div>
-      <div class="chips">
-        ${periods.length ? `<select id="lore-period" class="chip" aria-label="Filtrar por período"><option value="">Todos os períodos</option>${periods.map(p => `<option value="${esc(p)}"${st.fPeriod === p ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>` : ''}
-        ${timelineCsvUrl(curWorld()) ? `<button type="button" class="chip" data-act="timeline-refresh" title="Ler de novo as eras e eventos da linha do tempo">${timelines[curWorld()?.id]?.loading ? 'Atualizando…' : '↻ Atualizar eras'}</button>` : ''}
-        <select id="lore-sort" class="chip" aria-label="Ordenar" style="margin-left:auto"><option value="cat"${st.loreSort !== 'tempo' ? ' selected' : ''}>Por categoria</option><option value="tempo"${st.loreSort === 'tempo' ? ' selected' : ''}>Linha do tempo</option></select>
+      <div class="list-ctl">
+        <select id="lore-period" class="ctl" aria-label="Filtrar por período"${periods.length ? '' : ' disabled'}><option value="">${periods.length ? 'Todos os períodos' : 'Sem períodos'}</option>${periods.map(p => `<option value="${esc(p)}"${st.fPeriod === p ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select>
+        <select id="lore-sort" class="ctl" aria-label="Ordenar"><option value="cat"${st.loreSort !== 'tempo' ? ' selected' : ''}>Por categoria</option><option value="tempo"${st.loreSort === 'tempo' ? ' selected' : ''}>Linha do tempo</option></select>
+        ${timelineCsvUrl(curWorld()) ? `<button type="button" class="ctl ctl-icon" data-act="timeline-refresh" title="Atualizar eras e eventos da linha do tempo" aria-label="Atualizar eras e eventos da linha do tempo"${timelines[curWorld()?.id]?.loading ? ' disabled' : ''}><span${timelines[curWorld()?.id]?.loading ? ' class="spin"' : ''}>↻</span></button>` : ''}
       </div>
       <ul class="items">${items}</ul></section>
     <section class="pane detail-pane">${sel ? `<button class="btn small ghost back" data-act="back">← Lore</button>
