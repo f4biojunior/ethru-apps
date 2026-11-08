@@ -44,7 +44,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 h1,h2,h3{font-family:var(--serif);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
 p{margin:0}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.wrap{max-width:1180px;margin:0 auto}
+.wrap{max-width:1760px;margin:0 auto}
+@media (min-width:1280px){ body{padding-inline:clamp(16px,2.5vw,48px)} .work{grid-template-columns:minmax(300px,400px) minmax(0,1fr)} .book-wrap{grid-template-columns:minmax(260px,340px) minmax(0,1fr)} }
 
 /* modo leitura (Firebase sem permissão) */
 body.ro .adder, body.ro .camp-new, body.ro [data-act^="new-"], body.ro [data-act^="edit-"], body.ro [data-act="del"],
