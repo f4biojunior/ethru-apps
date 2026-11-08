@@ -512,7 +512,7 @@ const st = {
   tab: 'npcs', wtab: 'mapa',
   sel: {npcs: null, sessions: null, notes: null, places: null, lore: null, recipe: null},
   q: {npcs: '', sessions: '', notes: '', places: '', lore: '', recipes: ''},
-  fDisp: '', fStatus: '', fCat: '', fType: '', fLore: '', fPeriod: '', fRegion: '', loreSort: 'cat', npcSort: 'nome',
+  fDisp: '', fStatus: '', fCat: '', fType: '', fLore: '', fPeriod: '', fRegion: '', fRecipePeriod: '', loreSort: 'cat', npcSort: 'nome',
   placing: null, view: {}, labels: lsGet('grimorio-rotulos') !== '0', lod: lsGet('grimorio-lod') !== '0', mapDims: {}, mapWhen: null, mapQuest: null,
   confirm: null,
   dice: {open: false, expr: '1d20', last: null, err: '', hist: []}
@@ -551,7 +551,7 @@ function toast(msg) {
 function resetSel() {
   st.sel = {npcs: null, sessions: null, notes: null, places: null, lore: null, recipe: null};
   st.q = {npcs: '', sessions: '', notes: '', places: '', lore: '', recipes: ''};
-  st.fDisp = st.fStatus = st.fCat = st.fType = st.fLore = st.fPeriod = st.fRegion = ''; st.confirm = null; st.placing = null;
+  st.fDisp = st.fStatus = st.fCat = st.fType = st.fLore = st.fPeriod = st.fRegion = st.fRecipePeriod = ''; st.confirm = null; st.placing = null;
 }
 function subWorld(wid) {
   if (st.wid === wid && st.wsubs.length) return;
@@ -1114,9 +1114,17 @@ function noteDetail(n) {
 /* --- mundo --- */
 /* ---------- livro de receitas (lore na categoria Receitas) ---------- */
 const lines = s => String(s || '').split(/\n+/).map(x => x.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim()).filter(Boolean);
+const eraByName = n => (timelineOf(curWorld())?.eras || []).find(e => norm(e.headline) === norm(n));
+/* receita pertence ao período se tiver esse nome de período ou se seus anos caem dentro da era */
+function recipeInPeriod(r, name) {
+  if (!name) return true;
+  if (norm(r.period) === norm(name)) return true;
+  const era = eraByName(name), a = yearNum(r.yearFrom), b = yearNum(r.yearTo);
+  return !!era && (a != null || b != null) && overlaps(a, b ?? a, {from: era.year, to: era.endYear});
+}
 function recipesList() {
   const q = norm(st.q.recipes);
-  return st.lore.filter(l => l.cat === 'Receitas' && (!st.fRegion || (l.places || []).includes(st.fRegion)) &&
+  return st.lore.filter(l => l.cat === 'Receitas' && (!st.fRegion || (l.places || []).includes(st.fRegion)) && recipeInPeriod(l, st.fRecipePeriod) &&
       (!q || norm([l.title, l.body, l.ingredients, l.steps, l.realSubs, l.gmNotes, lorePlaces(l).map(p => p.name).join(' ')].join(' ')).includes(q)))
     .sort(byName);
 }
@@ -1125,13 +1133,20 @@ function viewRecipes() {
   let cur = list.find(r => r.id === st.sel.recipe) || list[0];
   const idx = cur ? list.indexOf(cur) : -1;
   const regions = uniq(all.flatMap(r => lorePlaces(r).map(p => p.id + '|' + p.name))).map(s => s.split('|'));
+  const eraOrder = (timelineOf(curWorld())?.eras || []).map(e => e.headline);
+  const periods = [...eraOrder, ...uniq(all.map(r => r.period)).filter(n => !eraOrder.includes(n))];
   const toc = list.length ? `<ol class="book-toc">${list.map((r, i) => `<li><button class="toc-item" data-act="recipe-open" data-id="${esc(r.id)}" aria-current="${r === cur}">
       <span class="toc-name">${esc(r.title)}</span><span class="toc-dots" aria-hidden="true"></span><span class="toc-page">${i * 2 + 1}</span></button></li>`).join('')}</ol>`
     : `<p class="empty" style="text-align:left;padding:8px 0">${all.length ? 'Nenhuma receita com esse filtro.' : 'O livro ainda está em branco.'}</p>`;
   const side = `<aside class="book-side">
       <div class="toolbar"><input id="q-recipes" type="search" placeholder="Buscar receita, ingrediente, lugar…" value="${esc(st.q.recipes)}" data-q="recipes" aria-label="Buscar receita"></div>
       ${regions.length ? `<div class="chips"><button class="chip" aria-pressed="${!st.fRegion}" data-act="filter" data-key="fRegion" data-val="">Todas as regiões</button>${regions.map(([id, n]) => `<button class="chip" aria-pressed="${st.fRegion === id}" data-act="filter" data-key="fRegion" data-val="${esc(id)}">${esc(n)}</button>`).join('')}</div>` : ''}
+      ${periods.length ? `<div class="list-ctl" style="grid-template-columns:minmax(0,1fr)"><select id="recipe-period" class="ctl" aria-label="Filtrar por período">
+        <option value="">Todos os períodos</option>${periods.map(n => `<option value="${esc(n)}"${st.fRecipePeriod === n ? ' selected' : ''}>${esc(n)}${eraByName(n) ? ` (${eraByName(n).year} a ${eraByName(n).endYear})` : ''}</option>`).join('')}</select></div>` : ''}
       <p class="eyebrow" style="margin-top:6px">Sumário</p>${toc}</aside>`;
+  if (!cur && all.length) return `<div class="book-wrap">${side}<section class="book book-empty"><div class="page">
+      <p class="book-kicker">Livro de receitas de ${esc(curWorld()?.name || '')}</p><h2>Nenhuma receita com esse filtro</h2>
+      <p>Troque o período, a região ou a busca para ver as outras ${all.length === 1 ? 'receita' : all.length + ' receitas'} do livro.</p></div></section></div>`;
   if (!cur) return `<div class="book-wrap">${side}<section class="book book-empty"><div class="page">
       <p class="book-kicker">Livro de receitas de ${esc(curWorld()?.name || '')}</p><h2>Nenhuma receita por aqui</h2>
       <p>Este livro reúne os pratos, bebidas e conservas de ${esc(curWorld()?.name || 'seu mundo')} registrados no lore.</p>
@@ -1995,6 +2010,7 @@ document.addEventListener('change', ev => {
   }
   const mm = ev.target.closest?.('.multi'); if (mm) updateMultiCount(mm.id);
   if (ev.target.id === 'npc-sort') { st.npcSort = ev.target.value; render(); }
+  if (ev.target.id === 'recipe-period') { st.fRecipePeriod = ev.target.value; return render(); }
   if (ev.target.id === 'lore-period') { st.fPeriod = ev.target.value; render(); }
   if (ev.target.id === 'lore-sort') { st.loreSort = ev.target.value; render(); }
   if (ev.target.id === 'import-file') { const file = ev.target.files[0]; ev.target.value = ''; if (file) importData(file); }
