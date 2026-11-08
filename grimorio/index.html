@@ -1111,13 +1111,13 @@ function viewRecipes() {
       <span class="toc-name">${esc(r.title)}</span><span class="toc-dots" aria-hidden="true"></span><span class="toc-page">${i * 2 + 1}</span></button></li>`).join('')}</ol>`
     : `<p class="empty" style="text-align:left;padding:8px 0">${all.length ? 'Nenhuma receita com esse filtro.' : 'O livro ainda está em branco.'}</p>`;
   const side = `<aside class="book-side">
-      ${listHead('recipes', 'Buscar receita, ingrediente, lugar…', 'new-recipe', '+ Receita')}
+      <div class="toolbar"><input id="q-recipes" type="search" placeholder="Buscar receita, ingrediente, lugar…" value="${esc(st.q.recipes)}" data-q="recipes" aria-label="Buscar receita"></div>
       ${regions.length ? `<div class="chips"><button class="chip" aria-pressed="${!st.fRegion}" data-act="filter" data-key="fRegion" data-val="">Todas as regiões</button>${regions.map(([id, n]) => `<button class="chip" aria-pressed="${st.fRegion === id}" data-act="filter" data-key="fRegion" data-val="${esc(id)}">${esc(n)}</button>`).join('')}</div>` : ''}
       <p class="eyebrow" style="margin-top:6px">Sumário</p>${toc}</aside>`;
   if (!cur) return `<div class="book-wrap">${side}<section class="book book-empty"><div class="page">
       <p class="book-kicker">Livro de receitas de ${esc(curWorld()?.name || '')}</p><h2>Nenhuma receita por aqui</h2>
-      <p>Cadastre pratos, bebidas e conservas de ${esc(curWorld()?.name || 'seu mundo')}. Cada receita é um registro de lore na categoria <b>Receitas</b>, e pode ter uma ou várias regiões de origem no mapa.</p>
-      <p style="margin-top:14px"><button class="btn primary" data-act="new-recipe">+ Escrever a primeira receita</button></p></div></section></div>`;
+      <p>Este livro reúne os pratos, bebidas e conservas de ${esc(curWorld()?.name || 'seu mundo')} registrados no lore.</p>
+      <p style="margin-top:14px">Para incluir uma receita aqui, vá até a aba <button class="link" data-act="wtab" data-tab="lore">Lore</button> e cadastre um registro na categoria <b>Receitas</b>.</p></div></section></div>`;
   st.sel.recipe = cur.id;
   const ing = lines(cur.ingredients), steps = lines(cur.steps), regs = lorePlaces(cur);
   const meta = [cur.serves && `Rende ${cur.serves}`, cur.time && `Preparo: ${cur.time}`, periodLabel(cur)].filter(Boolean);
@@ -1144,7 +1144,6 @@ function viewRecipes() {
         <button class="btn small" data-act="recipe-step" data-d="1"${idx >= list.length - 1 ? ' disabled' : ''} aria-label="Próxima receita">Próxima ▶</button>
         <span class="spacer"></span>
         <button class="btn small ghost" data-act="goto-lore" data-id="${esc(cur.id)}">Ver no lore</button>
-        <button class="btn small" data-act="edit-recipe" data-id="${esc(cur.id)}">Editar</button>
       </nav>
     </section></div>`;
 }
