@@ -213,6 +213,9 @@ body.ro [data-act="toggle-pin"], body.ro [data-act="toggle-quest"], body.ro [dat
 .recipe-text{white-space:pre-wrap;overflow-wrap:anywhere}
 .gm-note{margin-top:20px;padding:12px 14px;border:1px dashed var(--paper-accent);border-radius:8px;background:var(--paper-2)}
 .gm-label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--paper-accent);margin-bottom:4px}
+.recipe-fans{font-size:14px;color:var(--paper-muted);margin-top:8px}
+.recipe-fans .link{color:var(--paper-accent)}
+.fav-line{font-size:15px;color:var(--muted);margin-top:6px}
 .recipe-muted{color:var(--paper-muted);font-style:italic}
 .page-num{position:absolute;bottom:14px;font-family:var(--serif);font-size:14px;color:var(--paper-muted)}
 .page-l .page-num{left:36px}.page-r .page-num{right:36px}
@@ -787,6 +790,8 @@ function loreForm(n, preset) {
       {id: 'period', label: 'Período da história', value: n?.period ?? st.fPeriod, ph: 'Escolha uma era ou escreva', list: uniq([...eraNames(curWorld()), ...st.lore.map(x => x.period)])},
       {id: 'yearFrom', label: 'Ano ou início (opcional)', value: n?.yearFrom, ph: 'Ex.: 212'},
       {id: 'yearTo', label: 'Até o ano, se durou (opcional)', value: n?.yearTo, ph: 'Ex.: 350'},
+      {id: 'favRecipe', label: 'Receita favorita', type: 'select', value: n?.favRecipe ?? '', full: true, only: 'Personagens',
+        options: [['', st.lore.some(l => l.cat === 'Receitas') ? '— Nenhuma —' : '— Nenhuma receita cadastrada ainda —'], ...st.lore.filter(l => l.cat === 'Receitas' && l.id !== n?.id).sort(byName).map(r => [r.id, r.title])]},
       {id: 'serves', label: 'Rendimento', value: n?.serves, ph: 'Ex.: 4 porções', only: 'Receitas'},
       {id: 'time', label: 'Tempo de preparo', value: n?.time, ph: 'Ex.: 1 hora', only: 'Receitas'},
       {id: 'realSubs', label: 'Substituições no mundo real', type: 'textarea', value: n?.realSubs, full: true, ph: 'Ex.: peixe de rio → tilápia; sal de pedra → sal grosso', only: 'Receitas'},
@@ -1125,6 +1130,7 @@ function viewRecipes() {
       <p style="margin-top:14px">Para incluir uma receita aqui, vá até a aba <button class="link" data-act="wtab" data-tab="lore">Lore</button> e cadastre um registro na categoria <b>Receitas</b>.</p></div></section></div>`;
   st.sel.recipe = cur.id;
   const ing = lines(cur.ingredients), steps = lines(cur.steps), regs = lorePlaces(cur);
+  const fans = st.lore.filter(l => l.cat === 'Personagens' && l.favRecipe === cur.id).sort(byName);
   const meta = [cur.serves && `Rende ${cur.serves}`, cur.time && `Preparo: ${cur.time}`, periodLabel(cur)].filter(Boolean);
   return `<div class="book-wrap">${side}
     <section class="book" aria-label="Receita: ${esc(cur.title)}">
@@ -1133,6 +1139,7 @@ function viewRecipes() {
         <h2 class="recipe-title">${esc(cur.title)}</h2>
         ${regs.length ? `<p class="recipe-origin">Da região de ${regs.map(p => `<button class="link" data-act="goto-place-map" data-id="${esc(p.id)}" title="Ver no mapa">${esc(p.name)}</button>`).join(regs.length > 2 ? ', ' : ' e ').replace(/, ([^,]*)$/, ' e $1')}</p>` : ''}
         ${meta.length ? `<p class="recipe-meta">${meta.map(esc).join(' · ')}</p>` : ''}
+        ${fans.length ? `<p class="recipe-fans">Prato favorito de ${fans.map(f => `<button class="link" data-act="goto-lore" data-id="${esc(f.id)}">${esc(f.title)}</button>`).join(', ')}</p>` : ''}
         ${cur.realSubs ? `<h3 class="recipe-h">Substituições no mundo real</h3><p class="recipe-text">${esc(cur.realSubs)}</p>` : ''}
         <h3 class="recipe-h">Ingredientes</h3>
         ${ing.length ? `<ul class="recipe-ing">${ing.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="recipe-muted">Sem ingredientes anotados.</p>'}
@@ -1339,6 +1346,7 @@ function setLoreYearLabels(cat) {
   const L = LORE_YEAR_LABELS[cat] || LORE_YEAR_LABELS._;
   ['yearFrom', 'yearTo'].forEach((k, i) => { const lb = document.querySelector(`label[for="f-${k}"]`), inp = $('#f-' + k); if (lb) lb.textContent = L[i][0]; if (inp) inp.placeholder = L[i][1]; });
 }
+const favRecipeOf = n => n.favRecipe ? st.lore.find(l => l.id === n.favRecipe && l.cat === 'Receitas') : null;
 const lorePlaces = n => (n.places || []).map(id => st.places.find(p => p.id === id)).filter(Boolean);
 const loreOfPlace = p => st.lore.filter(l => (l.places || []).includes(p.id)).sort((a, b) => (yearNum(a.yearFrom) ?? 1e9) - (yearNum(b.yearFrom) ?? 1e9) || byName(a, b));
 /* eventos de um item do lore: data por era/evento da linha do tempo ou por ano digitado */
@@ -1410,7 +1418,8 @@ function viewLore() {
       <ul class="items">${items}</ul></section>
     <section class="pane detail-pane">${sel ? `<button class="btn small ghost back" data-act="back">← Lore</button>
       <article class="detail"><div class="detail-head"><div><p class="eyebrow">${esc(sel.cat)}</p><h2>${esc(sel.title)}</h2>
-        ${periodLabel(sel) ? `<p class="epithet">${esc(periodLabel(sel))}</p>` : ''}</div>
+        ${periodLabel(sel) ? `<p class="epithet">${esc(periodLabel(sel))}</p>` : ''}
+        ${sel.cat === 'Personagens' && favRecipeOf(sel) ? `<p class="fav-line">Receita favorita: <button class="link" data-act="goto-recipe" data-id="${esc(favRecipeOf(sel).id)}">${esc(favRecipeOf(sel).title)}</button></p>` : ''}</div>
         <div class="actions">${sel.cat === 'Quest' ? (sel.x != null && sel.x !== '' ? `<button class="btn small ghost" data-act="goto-quest-map" data-id="${esc(sel.id)}">Ver no mapa</button><button class="btn small ghost" data-act="quest-set" data-id="${esc(sel.id)}">Mover no mapa</button>` : mapSrc(curWorld()) ? `<button class="btn small ghost" data-act="quest-set" data-id="${esc(sel.id)}">Marcar no mapa</button>` : '') : ''}<button class="btn small" data-act="edit-lore">Editar</button>${confirmBtn('lore:' + sel.id)}</div></div>
         <p class="prose" style="margin-top:18px">${esc(sel.body) || '<span style="color:var(--muted)">Sem texto.</span>'}</p>
         ${lorePlaces(sel).length ? `<div class="section-h"><h3>Lugares relacionados</h3><small>${lorePlaces(sel).length}</small></div>
@@ -1914,6 +1923,7 @@ document.addEventListener('click', async ev => {
   if (act === 'new-lore') return loreForm(null);
   if (act === 'new-recipe') return loreForm(null, {cat: 'Receitas', places: st.fRegion ? [st.fRegion] : []});
   if (act === 'edit-recipe') { st.sel.lore = b.dataset.id; return loreForm(st.lore.find(l => l.id === b.dataset.id)); }
+  if (act === 'goto-recipe') { if (inCampaign()) st.tab = 'world'; st.wtab = 'receitas'; st.sel.recipe = b.dataset.id; st.fRegion = ''; st.q.recipes = ''; window.scrollTo(0, 0); return render(); }
   if (act === 'recipe-open') { st.sel.recipe = b.dataset.id; render(); return $('.book')?.scrollIntoView({block: 'nearest', behavior: 'smooth'}); }
   if (act === 'recipe-step') { const l = recipesList(), i = l.findIndex(r => r.id === st.sel.recipe), n = l[i + (+b.dataset.d)]; if (n) { st.sel.recipe = n.id; render(); } return; }
   if (act === 'edit-lore') return loreForm(st.lore.find(n => n.id === st.sel.lore));
