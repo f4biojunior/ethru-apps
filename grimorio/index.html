@@ -789,9 +789,9 @@ function loreForm(n, preset) {
       {id: 'yearTo', label: 'Até o ano, se durou (opcional)', value: n?.yearTo, ph: 'Ex.: 350'},
       {id: 'serves', label: 'Rendimento', value: n?.serves, ph: 'Ex.: 4 porções', only: 'Receitas'},
       {id: 'time', label: 'Tempo de preparo', value: n?.time, ph: 'Ex.: 1 hora', only: 'Receitas'},
+      {id: 'realSubs', label: 'Substituições no mundo real', type: 'textarea', value: n?.realSubs, full: true, ph: 'Ex.: peixe de rio → tilápia; sal de pedra → sal grosso', only: 'Receitas'},
       {id: 'ingredients', label: 'Ingredientes (um por linha)', type: 'textarea', value: n?.ingredients, full: true, ph: '2 punhados de cevada\n1 peixe do rio defumado\nSal de pedra', only: 'Receitas'},
       {id: 'steps', label: 'Modo de preparo (um passo por linha)', type: 'textarea', value: n?.steps, full: true, ph: 'Deixe a cevada de molho durante a noite.\nCozinhe com o peixe em fogo baixo.', only: 'Receitas'},
-      {id: 'realSubs', label: 'Substituições no mundo real', type: 'textarea', value: n?.realSubs, full: true, ph: 'Ex.: peixe de rio → tilápia; sal de pedra → sal grosso', only: 'Receitas'},
       {id: 'gmNotes', label: 'Notas do mestre', type: 'textarea', value: n?.gmNotes, full: true, ph: 'Ex.: comer este caldo dá vantagem em testes contra frio por 1 dia', only: 'Receitas'},
       {id: 'places', label: 'Lugares relacionados no mapa', type: 'multi', full: true, value: n?.places ?? (preset?.places || []), options: placeOpts, empty: 'Nenhuma localidade cadastrada ainda.'},
       {id: 'body', label: 'Texto', type: 'textarea', value: n?.body, full: true}
@@ -1133,6 +1133,7 @@ function viewRecipes() {
         <h2 class="recipe-title">${esc(cur.title)}</h2>
         ${regs.length ? `<p class="recipe-origin">Da região de ${regs.map(p => `<button class="link" data-act="goto-place-map" data-id="${esc(p.id)}" title="Ver no mapa">${esc(p.name)}</button>`).join(regs.length > 2 ? ', ' : ' e ').replace(/, ([^,]*)$/, ' e $1')}</p>` : ''}
         ${meta.length ? `<p class="recipe-meta">${meta.map(esc).join(' · ')}</p>` : ''}
+        ${cur.realSubs ? `<h3 class="recipe-h">Substituições no mundo real</h3><p class="recipe-text">${esc(cur.realSubs)}</p>` : ''}
         <h3 class="recipe-h">Ingredientes</h3>
         ${ing.length ? `<ul class="recipe-ing">${ing.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="recipe-muted">Sem ingredientes anotados.</p>'}
         <span class="page-num">${idx * 2 + 1}</span>
@@ -1141,7 +1142,6 @@ function viewRecipes() {
         <h3 class="recipe-h">Modo de preparo</h3>
         ${steps.length ? `<ol class="recipe-steps">${steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : '<p class="recipe-muted">Sem modo de preparo anotado.</p>'}
         ${cur.body ? `<h3 class="recipe-h">História</h3><p class="recipe-story">${esc(cur.body)}</p>` : ''}
-        ${cur.realSubs ? `<h3 class="recipe-h">Substituições no mundo real</h3><p class="recipe-text">${esc(cur.realSubs)}</p>` : ''}
         ${cur.gmNotes ? `<aside class="gm-note"><p class="gm-label">Notas do mestre</p><p class="recipe-text">${esc(cur.gmNotes)}</p></aside>` : ''}
         <span class="page-num">${idx * 2 + 2}</span>
       </div>
